@@ -46,13 +46,18 @@ function UpcomingEvents() {
         <section className="py-16 md:py-24 bg-gradient-to-br from-primary-50 to-secondary-50">
             <div className="container-custom">
                 {/* Section Header */}
-                <div className="text-center mb-12">
-                    <h2 className="font-heading font-bold text-3xl md:text-4xl text-gray-900 mb-4">
-                        Upcoming Events
-                    </h2>
-                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                        Don't miss out on exciting sports events happening near you
-                    </p>
+                <div className="flex items-center justify-between mb-12">
+                    <div>
+                        <h2 className="font-heading font-bold text-3xl md:text-4xl text-gray-900 mb-2">
+                            Upcoming Events
+                        </h2>
+                        <p className="text-gray-600 text-lg">
+                            Don't miss out on exciting sports events happening near you
+                        </p>
+                    </div>
+                    <Link to="/events" className="hidden md:block btn-outline">
+                        View All Events
+                    </Link>
                 </div>
 
                 {/* Events Grid */}
@@ -107,6 +112,13 @@ function UpcomingEvents() {
                             </div>
                         </Link>
                     ))}
+                </div>
+
+                {/* Mobile View All Button */}
+                <div className="mt-8 text-center md:hidden">
+                    <Link to="/events" className="btn-outline">
+                        View All Events
+                    </Link>
                 </div>
             </div>
         </section>

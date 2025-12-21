@@ -5,6 +5,7 @@ import SearchBar from './components/SearchBar';
 import SportsCategories from './components/SportsCategories';
 import FeaturedVenues from './components/FeaturedVenues';
 import UpcomingEvents from './components/UpcomingEvents';
+import GearMarketplace from './components/GearMarketplace';
 import HowItWorks from './components/HowItWorks';
 
 function LandingPage() {
@@ -24,6 +25,9 @@ function LandingPage() {
 
                 {/* Upcoming Events */}
                 <UpcomingEvents />
+
+                {/* Sports Gear Marketplace */}
+                <GearMarketplace />
 
                 {/* How It Works */}
                 <HowItWorks />

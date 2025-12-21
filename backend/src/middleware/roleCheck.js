@@ -28,13 +28,13 @@ const roleCheck = (...allowedRoles) => {
 };
 
 // Predefined role middleware for common use cases
-const isUser = roleCheck('user', 'venue_owner', 'admin');
-const isVenueOwner = roleCheck('venue_owner', 'admin');
+const isUser = roleCheck('user', 'operator', 'admin');
+const isOperator = roleCheck('operator', 'admin');
 const isAdmin = roleCheck('admin');
 
 module.exports = {
     roleCheck,
     isUser,
-    isVenueOwner,
+    isOperator,
     isAdmin,
 };

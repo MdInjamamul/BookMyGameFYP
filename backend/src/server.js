@@ -32,12 +32,12 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/venues', require('./routes/venue.routes'));
+app.use('/api/bookings', require('./routes/booking.routes'));
+app.use('/api/timeslots', require('./routes/timeslot.routes'));
 
 // Additional routes will be added here
-// app.use('/api/venues', require('./routes/venue.routes'));
-// app.use('/api/courts', require('./routes/court.routes'));
-// app.use('/api/bookings', require('./routes/booking.routes'));
-// app.use('/api/sports', require('./routes/sport.routes'));
+app.use('/api/sports', require('./routes/sport.routes'));
 // app.use('/api/reviews', require('./routes/review.routes'));
 // app.use('/api/events', require('./routes/event.routes'));
 

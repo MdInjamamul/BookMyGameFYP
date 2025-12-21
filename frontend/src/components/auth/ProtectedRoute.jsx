@@ -18,8 +18,15 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // Check role-based access (for future use)
+    // Check role-based access
     if (requiredRoles.length > 0 && !requiredRoles.includes(user?.role)) {
+        // Redirect based on user's actual role
+        if (user?.role === 'operator') {
+            return <Navigate to="/operator" replace />;
+        }
+        if (user?.role === 'admin') {
+            return <Navigate to="/admin" replace />;
+        }
         return <Navigate to="/" replace />;
     }
 

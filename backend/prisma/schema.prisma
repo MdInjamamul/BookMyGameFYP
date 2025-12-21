@@ -146,7 +146,7 @@ model Sport {
 
   // Relations
   userPreferences UserPreferredSport[]
-  venues          VenueSport[]
+  venues          Venue[]
   trainingVideos  TrainingVideo[]
 
   @@map("sports")
@@ -170,6 +170,7 @@ model UserPreferredSport {
 model Venue {
   id              String         @id @default(uuid())
   operatorId      String         @map("operator_id")
+  sportId         String         @map("sport_id")
   name            String         @db.VarChar(255)
   description     String?
   address         String
@@ -198,8 +199,8 @@ model Venue {
   // Relations
   operator        User                 @relation("VenueOperator", fields: [operatorId], references: [id], onDelete: Cascade)
   approver        User?                @relation("VenueApprover", fields: [approvedBy], references: [id])
+  sport           Sport                @relation(fields: [sportId], references: [id])
   operatingHours  VenueOperatingHour[]
-  sports          VenueSport[]
   images          VenueImage[]
   favoritedBy     UserFavoriteVenue[]
   timeSlots       TimeSlot[]
@@ -207,6 +208,7 @@ model Venue {
   events          Event[]
 
   @@index([operatorId])
+  @@index([sportId])
   @@index([city])
   @@index([isActive])
   @@index([approvalStatus])
@@ -231,19 +233,9 @@ model VenueOperatingHour {
   @@map("venue_operating_hours")
 }
 
-model VenueSport {
-  venueId String @map("venue_id")
-  sportId String @map("sport_id")
+// NOTE: VenueSport junction table removed - using Venue.sportId instead
 
-  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  sport Sport @relation(fields: [sportId], references: [id], onDelete: Cascade)
-
-  @@id([venueId, sportId])
-  @@index([sportId])
-  @@map("venue_sports")
-}
-
-// MULTIPLE VENUE IMAGES - Proper Relational Table
+// VENUE IMAGES - Simple storage (sport inferred from venue)
 model VenueImage {
   id           String   @id @default(uuid())
   venueId      String   @map("venue_id")

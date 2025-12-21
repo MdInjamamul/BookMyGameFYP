@@ -24,14 +24,25 @@ function SearchBar() {
                     <label htmlFor="location" className="block text-left text-sm font-medium text-gray-700 mb-2">
                         Location
                     </label>
-                    <input
-                        type="text"
-                        id="location"
-                        placeholder="Enter city or area"
-                        value={searchParams.location}
-                        onChange={(e) => setSearchParams({ ...searchParams, location: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-gray-900"
-                    />
+                    <div className="relative">
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            id="location"
+                            placeholder="Enter city or area"
+                            value={searchParams.location}
+                            onChange={(e) => setSearchParams({ ...searchParams, location: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-gray-900"
+                        />
+                    </div>
                 </div>
 
                 {/* Sport Select */}

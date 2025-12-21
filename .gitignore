@@ -52,3 +52,6 @@ backend/prisma/migrations/.tmp/
 # Uploads (if you add file upload later)
 uploads/
 public/uploads/
+
+# Markdown files
+*.md
