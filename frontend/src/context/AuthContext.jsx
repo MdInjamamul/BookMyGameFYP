@@ -70,6 +70,11 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
     };
 
+    // Update user data (for profile updates)
+    const updateUser = (userData) => {
+        setUser(prev => ({ ...prev, ...userData }));
+    };
+
     const value = {
         user,
         isLoading,
@@ -77,7 +82,9 @@ export const AuthProvider = ({ children }) => {
         login,
         signup,
         logout,
+        updateUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
