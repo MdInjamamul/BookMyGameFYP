@@ -67,21 +67,23 @@ function Header() {
                                     </Link>
                                 )}
                                 <div className="flex items-center space-x-2">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center">
-                                        <span className="text-white font-semibold text-sm">
-                                            {user?.fullName?.charAt(0).toUpperCase()}
-                                        </span>
+                                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center overflow-hidden">
+                                        {user?.profileImage ? (
+                                            <img
+                                                src={user.profileImage}
+                                                alt={user?.fullName}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-white font-semibold text-sm">
+                                                {user?.fullName?.charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                     </div>
                                     <span className="text-gray-700 font-medium hidden sm:inline">
                                         {user?.fullName}
                                     </span>
                                 </div>
-                                <button
-                                    onClick={handleLogout}
-                                    className="text-gray-700 hover:text-red-600 font-medium transition-colors"
-                                >
-                                    Logout
-                                </button>
                             </div>
                         ) : (
                             // Not logged in - Show login/signup
