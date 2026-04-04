@@ -34,10 +34,10 @@ if (isCloudinaryConfigured) {
         },
     });
 
-    console.log('📸 Using Cloudinary for image uploads');
+    console.log('Using Cloudinary for image uploads');
 } else {
     // Fallback to local storage
-    const uploadDirs = ['uploads/venues', 'uploads/products', 'uploads/users', 'uploads/events', 'uploads/misc'];
+    const uploadDirs = ['uploads/venues', 'uploads/products', 'uploads/users', 'uploads/events', 'uploads/misc', 'uploads/videos', 'uploads/thumbnails'];
     uploadDirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -57,6 +57,8 @@ if (isCloudinaryConfigured) {
                 folder = 'users';
             } else if (req.originalUrl.includes('/events')) {
                 folder = 'events';
+            } else if (req.originalUrl.includes('/training') || req.query.folder === 'thumbnails') {
+                folder = 'thumbnails';
             }
 
             const dest = `uploads/${folder}`;
@@ -68,7 +70,7 @@ if (isCloudinaryConfigured) {
         filename: (req, file, cb) => {
             const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
             const ext = path.extname(file.originalname).toLowerCase();
-            
+
             let prefix = 'image';
             if (req.query.folder) {
                 prefix = req.query.folder.replace(/s$/, ''); // e.g., 'events' -> 'event'
@@ -80,13 +82,15 @@ if (isCloudinaryConfigured) {
                 prefix = 'user';
             } else if (req.originalUrl.includes('/events')) {
                 prefix = 'event';
+            } else if (req.originalUrl.includes('/training') || req.query.folder === 'thumbnails') {
+                prefix = 'thumbnail';
             }
 
             cb(null, `${prefix}-${uniqueSuffix}${ext}`);
         }
     });
 
-    console.log('📁 Using structured local storage for image uploads (Cloudinary not configured)');
+    console.log('Using structured local storage for image uploads (Cloudinary not configured)');
 }
 
 // File filter - only allow images
@@ -113,6 +117,7 @@ const upload = multer({
 // Helper to delete an image (works for both Cloudinary and local)
 const deleteImage = async (imageUrl) => {
     try {
+        if (!imageUrl) return;
         if (isCloudinaryConfigured && imageUrl.includes('cloudinary.com')) {
             // Extract public_id from Cloudinary URL
             const parts = imageUrl.split('/');
@@ -133,6 +138,22 @@ const deleteImage = async (imageUrl) => {
     }
 };
 
+/**
+ * Generic local file deletion helper.
+ * Handles paths starting with /uploads/
+ */
+const deleteFile = async (fileUrl) => {
+    if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
+    try {
+        const fullPath = path.join(process.cwd(), fileUrl);
+        if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+        }
+    } catch (err) {
+        console.error(`Error deleting local file: ${fileUrl}`, err);
+    }
+};
+
 // Helper to get image URL from multer file
 const getImageUrl = (file) => {
     if (file.path && file.path.includes('cloudinary.com')) {
@@ -146,9 +167,107 @@ const getImageUrl = (file) => {
     return null;
 };
 
+// ============================================
+// TRAINING MEDIA UPLOAD — Special handling for Video + Thumbnail
+// ============================================
+
+const trainingMediaStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let folder = 'misc';
+        if (file.fieldname === 'video') {
+            folder = 'videos';
+        } else if (file.fieldname === 'thumbnail') {
+            folder = 'thumbnails';
+        }
+
+        const dest = `uploads/${folder}`;
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const ext = path.extname(file.originalname).toLowerCase();
+        const prefix = file.fieldname === 'video' ? 'video' : 'thumbnail';
+        cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+    }
+});
+
+const trainingMediaFilter = (req, file, cb) => {
+    const videoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/avi'];
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+    if (file.fieldname === 'video') {
+        if (videoTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid video type. Only MP4, WebM, OGG, MOV, and AVI are allowed.'), false);
+        }
+    } else if (file.fieldname === 'thumbnail') {
+        if (imageTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid thumbnail type. Only JPEG, PNG, and WebP are allowed.'), false);
+        }
+    } else {
+        cb(null, true); // Allow other fields if any
+    }
+};
+
+const trainingMediaUpload = multer({
+    storage: trainingMediaStorage,
+    fileFilter: trainingMediaFilter,
+    limits: {
+        fileSize: 500 * 1024 * 1024, // 500MB limit
+        files: 2
+    }
+});
+
+// Legacy video upload: for single video files only (backward compatibility)
+const videoStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = 'uploads/videos';
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `video-${uniqueSuffix}${ext}`);
+    }
+});
+
+const videoUpload = multer({
+    storage: videoStorage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/avi'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only MP4, WebM, OGG, MOV, and AVI are allowed.'), false);
+        }
+    },
+    limits: {
+        fileSize: 500 * 1024 * 1024, 
+        files: 1
+    }
+});
+
+// Helper to delete a local video file
+const deleteVideo = async (videoUrl) => {
+    return deleteFile(videoUrl);
+};
+
 module.exports = {
     upload,
+    videoUpload,
+    trainingMediaUpload,
     deleteImage,
+    deleteVideo,
+    deleteFile,
     getImageUrl,
     isCloudinaryConfigured
 };

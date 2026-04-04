@@ -33,6 +33,10 @@ const auth = async (req, res, next) => {
                 isVerified: true,
                 profileImage: true,
                 phone: true,
+                canUploadVideos: true,
+                videoUploaderRequestStatus: true,
+                canSellProducts: true,
+                sellerRequestStatus: true,
             },
         });
 
@@ -95,6 +99,10 @@ const optionalAuth = async (req, res, next) => {
                 isVerified: true,
                 profileImage: true,
                 phone: true,
+                canUploadVideos: true,
+                videoUploaderRequestStatus: true,
+                canSellProducts: true,
+                sellerRequestStatus: true,
             },
         });
 

@@ -50,6 +50,7 @@ import AddEditProduct from './pages/Operator/AddEditProduct';
 import ManageOrders from './pages/Operator/ManageOrders';
 import OperatorOrderDetail from './pages/Operator/OperatorOrderDetail';
 import ManageReviews from './pages/Operator/ManageReviews';
+import OperatorTrainingVideos from './pages/Operator/OperatorTrainingVideos';
 
 // Admin imports
 import AdminLayout from './components/layout/AdminLayout';
@@ -206,6 +207,7 @@ function App() {
                             <Route path="orders" element={<ManageOrders />} />
                             <Route path="orders/:id" element={<OperatorOrderDetail />} />
                             <Route path="reviews" element={<ManageReviews />} />
+                            <Route path="training" element={<OperatorTrainingVideos />} />
                         </Route>
 
                         {/* Admin Routes */}

@@ -193,7 +193,14 @@ function UserSettings() {
                 </svg>
             )
         },
-    ];
+        user?.role === 'operator' && {
+            id: 'training', label: 'Training Access', icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                </svg>
+            )
+        },
+    ].filter(Boolean);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -458,6 +465,94 @@ function UserSettings() {
                                         <li>• Avoid using the same password across multiple sites</li>
                                         <li>• Never share your password with anyone</li>
                                     </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Training Access Tab (Operator Only) */}
+                        {activeTab === 'training' && user?.role === 'operator' && (
+                            <div className="bg-white rounded-xl shadow-soft p-6">
+                                <h2 className="text-xl font-bold text-gray-900 mb-2">Training Video Access</h2>
+                                <p className="text-gray-500 text-sm mb-8">Manage your ability to upload and share training content with the community.</p>
+
+                                <div className="max-w-2xl">
+                                    {user.canUploadVideos ? (
+                                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 flex items-start gap-4">
+                                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-green-900 text-lg">Access Granted</h3>
+                                                <p className="text-green-700 mt-1 mb-4">You are authorized to upload training videos. Your content will be visible on the public Training page.</p>
+                                                <Link 
+                                                    to="/operator/training" 
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                                >
+                                                    Manage My Videos
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                    </svg>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : user.videoUploaderRequestStatus === 'pending' ? (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 flex items-start gap-4">
+                                            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg className="w-6 h-6 text-yellow-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-yellow-900 text-lg">Request Pending</h3>
+                                                <p className="text-yellow-700 mt-1">Your application for video upload access is currently under review by our admin team. You'll be notified once a decision is made.</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="border border-gray-200 rounded-xl p-6">
+                                            <div className="flex flex-col md:flex-row gap-6">
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-gray-900 text-lg mb-2">Request Upload Access</h3>
+                                                    <p className="text-gray-600 text-sm mb-4">
+                                                        Want to share your expertise? Apply to become a verified content uploader and help sports enthusiasts improve their game.
+                                                    </p>
+                                                    <ul className="space-y-2 mb-6">
+                                                        {[
+                                                            'Upload instructional videos directly',
+                                                            'Categorize by sport and skill level',
+                                                            'Track performance with view counts',
+                                                            'Build your reputation in the community'
+                                                        ].map((item, idx) => (
+                                                            <li key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                                                <svg className="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <Link 
+                                                        to="/operator/training" 
+                                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all shadow-sm font-medium"
+                                                    >
+                                                        Go to Training Dashboard
+                                                    </Link>
+                                                </div>
+                                                <div className="w-full md:w-64 bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-gray-100">
+                                                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-3">
+                                                        <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                                                        </svg>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Status</p>
+                                                    <p className="font-bold text-gray-900">
+                                                        {user.videoUploaderRequestStatus === 'rejected' ? 'Previously Declined' : 'Not Requested'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

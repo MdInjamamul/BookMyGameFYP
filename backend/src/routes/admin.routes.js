@@ -64,4 +64,17 @@ router.put('/seller-requests/:id/approve', adminController.approveSellerRequest)
 // PUT /api/admin/seller-requests/:id/reject - Reject seller request
 router.put('/seller-requests/:id/reject', adminController.rejectSellerRequest);
 
+// ============================================
+// VIDEO UPLOADER REQUEST MANAGEMENT
+// ============================================
+
+// GET /api/admin/video-uploader-requests - Get pending video uploader requests
+router.get('/video-uploader-requests', adminController.getVideoUploaderRequests);
+
+// PUT /api/admin/video-uploader-requests/:id/approve - Approve video uploader request
+router.put('/video-uploader-requests/:id/approve', adminController.approveVideoUploaderRequest);
+
+// PUT /api/admin/video-uploader-requests/:id/reject - Reject video uploader request
+router.put('/video-uploader-requests/:id/reject', adminController.rejectVideoUploaderRequest);
+
 module.exports = router;

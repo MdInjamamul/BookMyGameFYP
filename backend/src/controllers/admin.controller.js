@@ -672,6 +672,148 @@ const rejectSellerRequest = async (req, res) => {
     }
 };
 
+// ============================================
+// VIDEO UPLOADER REQUEST MANAGEMENT
+// ============================================
+
+/**
+ * Get pending video uploader requests
+ * GET /api/admin/video-uploader-requests
+ */
+const getVideoUploaderRequests = async (req, res) => {
+    try {
+        const requests = await prisma.user.findMany({
+            where: {
+                role: 'operator',
+                videoUploaderRequestStatus: 'pending',
+            },
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                canUploadVideos: true,
+                videoUploaderRequestStatus: true,
+                _count: { select: { ownedVenues: true, uploadedVideos: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+
+        res.json({ success: true, data: requests });
+    } catch (error) {
+        console.error('Error fetching video uploader requests:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch video uploader requests',
+        });
+    }
+};
+
+/**
+ * Approve video uploader request
+ * PUT /api/admin/video-uploader-requests/:id/approve
+ */
+const approveVideoUploaderRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await prisma.user.findUnique({ where: { id } });
+        if (!user || user.role !== 'operator') {
+            return res.status(404).json({
+                success: false,
+                message: 'Operator not found',
+            });
+        }
+
+        await prisma.user.update({
+            where: { id },
+            data: {
+                canUploadVideos: true,
+                videoUploaderRequestStatus: 'approved',
+            },
+        });
+
+        const notification = await prisma.notification.create({
+            data: {
+                userId: id,
+                type: 'video_uploader_approved',
+                title: 'Video Upload Access Granted',
+                message: 'You are now approved to upload training videos on BookMyGame!',
+            },
+        });
+
+        try {
+            getIo().to(id).emit('new_notification', notification);
+        } catch (socketErr) {
+            console.error('Socket error emitting video_uploader_approved:', socketErr);
+        }
+
+        res.json({
+            success: true,
+            message: `${user.fullName} has been approved to upload training videos`,
+        });
+    } catch (error) {
+        console.error('Error approving video uploader request:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to approve video uploader request',
+        });
+    }
+};
+
+/**
+ * Reject video uploader request
+ * PUT /api/admin/video-uploader-requests/:id/reject
+ */
+const rejectVideoUploaderRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await prisma.user.findUnique({ where: { id } });
+        if (!user || user.role !== 'operator') {
+            return res.status(404).json({
+                success: false,
+                message: 'Operator not found',
+            });
+        }
+
+        await prisma.user.update({
+            where: { id },
+            data: {
+                canUploadVideos: false,
+                videoUploaderRequestStatus: 'rejected',
+            },
+        });
+
+        const notification = await prisma.notification.create({
+            data: {
+                userId: id,
+                type: 'video_uploader_rejected',
+                title: 'Video Upload Request Rejected',
+                message: 'Your request to upload training videos has been rejected. Please contact support for more information.',
+            },
+        });
+
+        try {
+            getIo().to(id).emit('new_notification', notification);
+        } catch (socketErr) {
+            console.error('Socket error emitting video_uploader_rejected:', socketErr);
+        }
+
+        res.json({
+            success: true,
+            message: `Video uploader request from ${user.fullName} has been rejected`,
+        });
+    } catch (error) {
+        console.error('Error rejecting video uploader request:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reject video uploader request',
+        });
+    }
+};
+
 module.exports = {
     getAdminDashboard,
     getPendingVenues,
@@ -685,4 +827,7 @@ module.exports = {
     getSellerRequests,
     approveSellerRequest,
     rejectSellerRequest,
+    getVideoUploaderRequests,
+    approveVideoUploaderRequest,
+    rejectVideoUploaderRequest,
 };
