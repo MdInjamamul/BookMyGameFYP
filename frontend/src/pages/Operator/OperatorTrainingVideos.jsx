@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import trainingService from '../../services/trainingService';
+import sportService from '../../services/sportService';
 import toast from 'react-hot-toast';
 
 const DIFFICULTY_LEVELS = ['beginner', 'intermediate', 'advanced'];
@@ -149,9 +150,9 @@ function VideoForm({ video, sports, onSave, onCancel }) {
             };
 
             if (isEdit) {
-                await api.put(`/training/operator/${video.id}`, formData, config);
+                await trainingService.operatorUpdateVideo(video.id, formData, config);
             } else {
-                await api.post('/training/operator', formData, config);
+                await trainingService.operatorCreateVideo(formData, config);
             }
 
             toast.success(isEdit ? 'Video updated!' : 'Video uploaded successfully!');
@@ -626,11 +627,11 @@ export default function OperatorTrainingVideos() {
 
     const fetchUploaderStatus = async () => {
         try {
-            const res = await api.get('/training/my-uploader-status');
-            if (res.data.success) {
-                setUploaderStatus(res.data.data.videoUploaderRequestStatus);
-                setCanUpload(res.data.data.canUploadVideos);
-                if (res.data.data.canUploadVideos) {
+            const data = await trainingService.getMyUploaderStatus();
+            if (data.success) {
+                setUploaderStatus(data.data.videoUploaderRequestStatus);
+                setCanUpload(data.data.canUploadVideos);
+                if (data.data.canUploadVideos) {
                     fetchMyVideos();
                 } else {
                     setLoading(false);
@@ -645,8 +646,8 @@ export default function OperatorTrainingVideos() {
     const fetchMyVideos = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/training/operator/my-videos', { params: { limit: 100 } });
-            if (res.data.success) setVideos(res.data.data);
+            const data = await trainingService.operatorGetMyVideos({ limit: 100 });
+            if (data.success) setVideos(data.data);
         } catch (err) {
             console.error('Failed to fetch operator videos:', err);
         } finally {
@@ -656,8 +657,8 @@ export default function OperatorTrainingVideos() {
 
     const fetchSports = async () => {
         try {
-            const res = await api.get('/sports');
-            if (res.data.success) setSports(res.data.data);
+            const data = await sportService.getSports();
+            if (data.success) setSports(data.data);
         } catch (err) {
             console.error('Failed to fetch sports:', err);
         }
@@ -666,7 +667,7 @@ export default function OperatorTrainingVideos() {
     const handleRequestAccess = async () => {
         setRequesting(true);
         try {
-            await api.post('/training/request-upload');
+            await trainingService.operatorRequestUpload();
             toast.success('Request submitted! Admin will review shortly.');
             setUploaderStatus('pending');
         } catch (err) {
@@ -678,7 +679,7 @@ export default function OperatorTrainingVideos() {
 
     const handleDelete = async (id) => {
         try {
-            await api.delete(`/training/operator/${id}`);
+            await trainingService.operatorDeleteVideo(id);
             setVideos(prev => prev.filter(v => v.id !== id));
             setDeleteConfirm(null);
             toast.success('Video deleted successfully');

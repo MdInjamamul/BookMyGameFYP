@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import trainingService from '../../services/trainingService';
+import sportService from '../../services/sportService';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 
@@ -205,8 +206,8 @@ export default function TrainingVideos() {
     const fetchVideos = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/training', { params: { limit: 50 } });
-            if (res.data.success) setVideos(res.data.data);
+            const data = await trainingService.getAllVideos({ limit: 50 });
+            if (data.success) setVideos(data.data);
         } catch (err) {
             console.error('Error fetching training videos:', err);
             setError('Failed to load training videos');
@@ -217,8 +218,8 @@ export default function TrainingVideos() {
 
     const fetchSports = async () => {
         try {
-            const res = await api.get('/sports');
-            if (res.data.success) setSports(res.data.data);
+            const data = await sportService.getSports();
+            if (data.success) setSports(data.data);
         } catch (err) {
             console.error('Error fetching sports:', err);
         }

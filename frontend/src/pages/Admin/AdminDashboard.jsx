@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 
 function AdminDashboard() {
     const [stats, setStats] = useState(null);
@@ -17,10 +17,10 @@ function AdminDashboard() {
 
             try {
                 setIsLoading(true);
-                const response = await api.get('/admin/dashboard');
-                if (response.data.success) {
-                    setStats(response.data.data.stats);
-                    setRecentVenues(response.data.data.recentPendingVenues);
+                const data = await adminService.getDashboardStats();
+                if (data.success) {
+                    setStats(data.data.stats);
+                    setRecentVenues(data.data.recentPendingVenues);
                 }
             } catch (err) {
                 console.error('Error fetching dashboard:', err);

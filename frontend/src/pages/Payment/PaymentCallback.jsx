@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import api from '../../services/api';
+import paymentService from '../../services/paymentService';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 
@@ -31,18 +31,21 @@ function PaymentCallback() {
                 }
 
                 // Verify payment with backend
-                const response = await api.get('/payments/khalti/verify', {
-                    params: { pidx, transaction_id: txnId, status: khaltiStatus, purchase_order_id: purchaseOrderId }
+                const data = await paymentService.verifyPayment({
+                    pidx,
+                    transaction_id: txnId,
+                    status: khaltiStatus,
+                    purchase_order_id: purchaseOrderId
                 });
 
-                if (response.data.success && response.data.data.status === 'completed') {
+                if (data.success && data.data.status === 'completed') {
                     setStatus('success');
                     setMessage(
                         paymentType === 'event'
                             ? 'Payment successful! Your event registration is confirmed.'
                             : 'Payment successful! Your booking is confirmed.'
                     );
-                    setPaymentData(response.data.data);
+                    setPaymentData(data.data);
 
                     // Clear cart from localStorage
                     localStorage.removeItem('bookingCart');
@@ -51,7 +54,7 @@ function PaymentCallback() {
                     // Both 'pending' (Khalti server issue) and 'failed' are treated as failed.
                     // The backend has already cleaned up any pending bookings/registrations.
                     setStatus('failed');
-                    setMessage(response.data.message || 'Payment could not be completed. Any pending booking has been cancelled.');
+                    setMessage(data.message || 'Payment could not be completed. Any pending booking has been cancelled.');
                 }
             } catch (error) {
                 console.error('Payment verification error:', error);

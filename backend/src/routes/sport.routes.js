@@ -3,6 +3,7 @@ const router = express.Router();
 const sportController = require('../controllers/sport.controller');
 const { auth } = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
+const { validateCreateSport } = require('../validators/sport.validator');
 
 /**
  * Sport Routes
@@ -15,6 +16,6 @@ router.get('/', sportController.getSports);
 router.get('/with-venue-counts', sportController.getSportsWithVenueCounts);
 
 // POST /api/sports - Create sport (admin only)
-router.post('/', auth, isAdmin, sportController.createSport);
+router.post('/', auth, isAdmin, validateCreateSport, sportController.createSport);
 
 module.exports = router;

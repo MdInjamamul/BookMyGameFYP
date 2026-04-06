@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 import { useDebounce } from '../../hooks/useDebounce';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
@@ -46,13 +46,13 @@ function UserManagement() {
                 ...(filters.search && { search: filters.search }),
             });
 
-            const response = await api.get(`/admin/users?${params}`);
-            if (response.data.success) {
-                setUsers(response.data.data);
+            const data = await adminService.getAllUsers(params);
+            if (data.success) {
+                setUsers(data.data);
                 setPagination(prev => ({
                     ...prev,
-                    total: response.data.pagination.total,
-                    pages: response.data.pagination.pages,
+                    total: data.pagination.total,
+                    pages: data.pagination.pages,
                 }));
             }
         } catch (err) {
@@ -68,12 +68,12 @@ function UserManagement() {
 
         try {
             setActionLoading(true);
-            const response = await api.put(`/admin/users/${editModal.user.id}`, {
+            const data = await adminService.updateUser(editModal.user.id, {
                 role: editModal.user.role,
                 isVerified: editModal.user.isVerified,
             });
 
-            if (response.data.success) {
+            if (data.success) {
                 showMessage('success', 'User updated successfully');
                 setEditModal({ open: false, user: null });
                 fetchUsers();
@@ -91,9 +91,9 @@ function UserManagement() {
 
         try {
             setActionLoading(true);
-            const response = await api.delete(`/admin/users/${deleteModal.user.id}`);
+            const data = await adminService.deleteUser(deleteModal.user.id);
 
-            if (response.data.success) {
+            if (data.success) {
                 showMessage('success', 'User deleted successfully');
                 setDeleteModal({ open: false, user: null });
                 fetchUsers();

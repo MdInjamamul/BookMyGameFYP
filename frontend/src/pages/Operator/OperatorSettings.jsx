@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import authService from '../../services/authService';
 
 /**
  * OperatorSettings - Settings page for venue operators
@@ -81,16 +81,13 @@ function OperatorSettings() {
 
             // Upload image to get URL, but don't save to profile yet
             // Use longer timeout for image uploads (120 seconds)
-            const response = await api.post('/auth/profile/image', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                timeout: 120000, // 120 seconds for image uploads
-            });
+            const response = await authService.uploadProfileImage(formData);
 
-            if (response.data.success) {
+            if (response.success) {
                 // Store the uploaded image URL in form state
                 setProfileForm(prev => ({
                     ...prev,
-                    profileImage: response.data.data.profileImage,
+                    profileImage: response.data.profileImage,
                 }));
                 setHasNewImage(true);
                 showMessage('success', 'Image uploaded! Click "Save Changes" to update your profile.');
@@ -123,14 +120,14 @@ function OperatorSettings() {
         try {
             setIsLoading(true);
             // Send all profile data including the new image URL if uploaded
-            const response = await api.put('/auth/profile', {
+            const response = await authService.updateProfile({
                 fullName: profileForm.fullName,
                 phone: profileForm.phone,
                 profileImage: profileForm.profileImage,
             });
 
-            if (response.data.success) {
-                updateUser(response.data.data);
+            if (response.success) {
+                updateUser(response.data);
                 setHasNewImage(false);
                 showMessage('success', 'Profile updated successfully!');
             }
@@ -157,12 +154,12 @@ function OperatorSettings() {
 
         try {
             setIsLoading(true);
-            const response = await api.put('/auth/password', {
+            const response = await authService.updatePassword({
                 oldPassword: passwordForm.oldPassword,
                 newPassword: passwordForm.newPassword,
             });
 
-            if (response.data.success) {
+            if (response.success) {
                 setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
                 showMessage('success', 'Password updated successfully!');
             }

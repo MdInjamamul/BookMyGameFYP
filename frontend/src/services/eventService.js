@@ -31,8 +31,38 @@ export const getEventById = async (id) => {
     return response.data;
 };
 
+/**
+ * Register for an event
+ * @param {string} id - Event ID
+ */
+export const registerForEvent = async (id) => {
+    const response = await apiClient.post(`/events/${id}/register`);
+    return response.data;
+};
+
+/**
+ * Cancel event registration
+ * @param {string} id - Event ID
+ */
+export const cancelRegistration = async (id) => {
+    const response = await apiClient.delete(`/events/${id}/register`);
+    return response.data;
+};
+
+/**
+ * Get user's event registrations
+ * @param {Object} params - Query parameters (e.g. status filter)
+ */
+export const getMyRegistrations = async (params = {}) => {
+    const response = await apiClient.get('/events/my-registrations', { params });
+    return response.data;
+};
+
 export default {
     getEvents,
     getFeaturedEvents,
     getEventById,
+    registerForEvent,
+    cancelRegistration,
+    getMyRegistrations,
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import eventService from '../../services/eventService';
+import paymentService from '../../services/paymentService';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import toast from 'react-hot-toast';
@@ -53,10 +54,10 @@ function MyEvents() {
     const fetchRegistrations = async () => {
         try {
             setLoading(true);
-            const params = filter !== 'all' ? `?status=${filter}` : '';
-            const response = await api.get(`/events/my-registrations${params}`);
-            if (response.data.success) {
-                setRegistrations(response.data.data);
+            const params = filter !== 'all' ? { status: filter } : {};
+            const data = await eventService.getMyRegistrations(params);
+            if (data.success) {
+                setRegistrations(data.data);
             }
         } catch (err) {
             console.error('Error fetching registrations:', err);
@@ -75,13 +76,13 @@ function MyEvents() {
     const handleRetryPayment = async (reg) => {
         setRetryingId(reg.id);
         try {
-            const response = await api.post('/payments/khalti/retry-event', {
+            const data = await paymentService.retryEventPayment({
                 registrationId: reg.id,
                 amount: parseFloat(reg.event.registrationFee),
                 returnUrl: `${window.location.origin}/payment/callback?type=event`,
             });
-            if (response.data.success && response.data.data.paymentUrl) {
-                window.location.href = response.data.data.paymentUrl;
+            if (data.success && data.data.paymentUrl) {
+                window.location.href = data.data.paymentUrl;
             } else {
                 toast.error('Failed to initiate payment. Please try again.');
                 setRetryingId(null);
@@ -98,7 +99,7 @@ function MyEvents() {
         setCancelModal({ open: false, eventId: null });
         try {
             setCancelling(eventId);
-            await api.delete(`/events/${eventId}/register`);
+            await eventService.cancelRegistration(eventId);
             toast.success('Registration cancelled successfully');
             fetchRegistrations();
         } catch (err) {

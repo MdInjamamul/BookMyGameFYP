@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 import { formatTime } from '../../utils/timeUtils';
 
 function VenueApproval() {
@@ -22,9 +22,9 @@ function VenueApproval() {
             hasFetched.current = true;
             try {
                 setIsLoading(true);
-                const response = await api.get(`/admin/venues/${id}`);
-                if (response.data.success) {
-                    setVenue(response.data.data);
+                const data = await adminService.getVenueForReview(id);
+                if (data.success) {
+                    setVenue(data.data);
                 }
             } catch (err) {
                 console.error('Error fetching venue:', err);
@@ -39,8 +39,8 @@ function VenueApproval() {
     const handleApprove = async () => {
         try {
             setProcessing(true);
-            const response = await api.put(`/admin/venues/${id}/approve`);
-            if (response.data.success) {
+            const data = await adminService.approveVenue(id);
+            if (data.success) {
                 navigate('/admin/venues/pending', {
                     state: { message: 'Venue approved successfully!' }
                 });
@@ -61,10 +61,8 @@ function VenueApproval() {
 
         try {
             setProcessing(true);
-            const response = await api.put(`/admin/venues/${id}/reject`, {
-                reason: rejectReason,
-            });
-            if (response.data.success) {
+            const data = await adminService.rejectVenue(id, rejectReason);
+            if (data.success) {
                 navigate('/admin/venues/pending', {
                     state: { message: 'Venue rejected' }
                 });

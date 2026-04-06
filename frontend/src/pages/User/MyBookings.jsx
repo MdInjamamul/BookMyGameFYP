@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../../services/api'
+import bookingService from '../../services/bookingService'
+import paymentService from '../../services/paymentService'
 import { formatTime } from '../../utils/timeUtils'
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
@@ -61,9 +62,9 @@ function MyBookings() {
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/bookings/my-bookings')
-      if (response.data.success) {
-        setBookings(response.data.data)
+      const data = await bookingService.getUserBookings()
+      if (data.success) {
+        setBookings(data.data)
       }
     } catch (err) {
       console.error('Error fetching bookings:', err)
@@ -82,13 +83,13 @@ function MyBookings() {
   const handleRetryPayment = async (booking) => {
     setRetryingId(booking.id)
     try {
-      const response = await api.post('/payments/khalti/retry-booking', {
+      const data = await paymentService.retryBookingPayment({
         bookingIds: [booking.id],
         amount: parseFloat(booking.totalPrice),
         returnUrl: `${window.location.origin}/payment/callback`,
       })
-      if (response.data.success && response.data.data.paymentUrl) {
-        window.location.href = response.data.data.paymentUrl
+      if (data.success && data.data.paymentUrl) {
+        window.location.href = data.data.paymentUrl
       } else {
         toast.error('Failed to initiate payment. Please try again.')
         setRetryingId(null)
@@ -105,10 +106,10 @@ function MyBookings() {
     setCancelModal({ open: false, booking: null, refundMsg: '' })
     setCancellingId(bookingId)
     try {
-      const response = await api.put(`/bookings/${bookingId}/cancel`)
-      if (response.data.success) {
+      const data = await bookingService.cancelBooking(bookingId)
+      if (data.success) {
         setBookings((prev) => prev.map((b) => b.id === bookingId ? { ...b, status: 'cancelled' } : b))
-        toast.success(response.data.data?.refundInfo?.message || 'Booking cancelled successfully')
+        toast.success(data.data?.refundInfo?.message || 'Booking cancelled successfully')
       }
     } catch (err) {
       console.error('Error cancelling booking:', err)

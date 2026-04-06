@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import api from '../../services/api'
+import bookingService from '../../services/bookingService'
+import paymentService from '../../services/paymentService'
 import { formatTime } from '../../utils/timeUtils'
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
@@ -65,17 +66,17 @@ function BookingCheckout() {
             payload.notes = notes.trim()
           }
 
-          return api.post('/bookings', payload)
+          return bookingService.createBooking(payload)
         })
 
         const results = await Promise.allSettled(bookingPromises)
 
         // Check for any failures
         const failures = results.filter(
-          (r) => r.status === 'rejected' || !r.value?.data?.success
+          (r) => r.status === 'rejected' || !r.value?.success
         )
         const successes = results.filter(
-          (r) => r.status === 'fulfilled' && r.value?.data?.success
+          (r) => r.status === 'fulfilled' && r.value?.success
         )
 
         if (successes.length === 0) {
@@ -91,7 +92,7 @@ function BookingCheckout() {
         }
 
         // Get booking IDs and save them for potential payment method switch
-        bookingIds = successes.map((r) => r.value.data.data.id)
+        bookingIds = successes.map((r) => r.value.data.id)
         setCreatedBookingIds(bookingIds)
       }
 
@@ -105,21 +106,21 @@ function BookingCheckout() {
 
       // If paying with Khalti, initiate payment
       if (paymentMethod === 'khalti') {
-        const paymentResponse = await api.post('/payments/khalti/initiate', {
+        const paymentResponse = await paymentService.initiateBookingPayment({
           bookingIds,
           amount: bookingData.totalPrice,
           returnUrl: `${window.location.origin}/payment/callback`,
         })
 
         if (
-          paymentResponse.data.success &&
-          paymentResponse.data.data.paymentUrl
+          paymentResponse.success &&
+          paymentResponse.data.paymentUrl
         ) {
           // Clear stored data before redirecting to Khalti
           sessionStorage.removeItem('pendingBooking')
           localStorage.removeItem('bookingCart')
           // Redirect to Khalti payment page
-          window.location.href = paymentResponse.data.data.paymentUrl
+          window.location.href = paymentResponse.data.paymentUrl
         } else {
           throw new Error('Failed to initiate payment')
         }

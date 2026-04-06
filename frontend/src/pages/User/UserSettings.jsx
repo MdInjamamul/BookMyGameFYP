@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import authService from '../../services/authService';
 
 /**
  * UserSettings - Settings page for regular users
@@ -91,22 +91,20 @@ function UserSettings() {
             formData.append('profileImage', file);
 
             // Step 1: Upload image to get URL
-            const uploadResponse = await api.post('/auth/profile/image', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            const uploadResponse = await authService.uploadProfileImage(formData);
 
-            if (uploadResponse.data.success) {
-                const imageUrl = uploadResponse.data.data.profileImage;
+            if (uploadResponse.success) {
+                const imageUrl = uploadResponse.data.profileImage;
 
                 // Step 2: Save the image URL to the user's profile in the database
-                const profileResponse = await api.put('/auth/profile', {
+                const profileResponse = await authService.updateProfile({
                     fullName: user.fullName,
                     phone: user.phone,
                     profileImage: imageUrl,
                 });
 
-                if (profileResponse.data.success) {
-                    updateUser(profileResponse.data.data);
+                if (profileResponse.success) {
+                    updateUser(profileResponse.data);
                     setPreviewImage(imageUrl);
                     showMessage('success', 'Profile image updated successfully');
                 }
@@ -125,15 +123,15 @@ function UserSettings() {
         setLoading(true);
 
         try {
-            const response = await api.put('/auth/profile', {
+            const response = await authService.updateProfile({
                 fullName: profileData.fullName,
                 phone: profileData.phone,
                 // Include current profile image to prevent it from being cleared
                 profileImage: previewImage || user?.profileImage || null,
             });
 
-            if (response.data.success) {
-                updateUser(response.data.data);
+            if (response.success) {
+                updateUser(response.data);
                 showMessage('success', 'Profile updated successfully');
             }
         } catch (error) {
@@ -161,12 +159,12 @@ function UserSettings() {
 
         setLoading(true);
         try {
-            const response = await api.put('/auth/password', {
+            const response = await authService.updatePassword({
                 currentPassword: passwordData.currentPassword,
                 newPassword: passwordData.newPassword,
             });
 
-            if (response.data.success) {
+            if (response.success) {
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                 showMessage('success', 'Password changed successfully');
             }

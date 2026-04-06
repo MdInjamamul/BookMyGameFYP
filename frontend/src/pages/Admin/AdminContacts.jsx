@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import contactService from '../../services/contactService';
 import { toast } from 'react-hot-toast';
 
 function AdminContacts() {
@@ -12,8 +12,8 @@ function AdminContacts() {
 
     const fetchInquiries = async () => {
         try {
-            const response = await api.get('/contact/admin');
-            setInquiries(response.data.data);
+            const data = await contactService.getAdminContacts();
+            setInquiries(data.data);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching inquiries:', error);
@@ -24,7 +24,7 @@ function AdminContacts() {
 
     const handleResolve = async (id) => {
         try {
-            await api.patch(`/contact/admin/${id}`, { status: 'resolved' });
+            await contactService.resolveAdminContact(id);
             toast.success('Inquiry marked as resolved');
             fetchInquiries(); // refresh list
         } catch (error) {

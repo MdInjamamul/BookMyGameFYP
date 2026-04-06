@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import api from '../../services/api'
+import eventService from '../../services/eventService'
+import paymentService from '../../services/paymentService'
 import { formatTime, formatDateLong } from '../../utils/timeUtils'
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
@@ -26,9 +27,9 @@ function EventDetail() {
   const fetchEvent = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/events/${id}`)
-      if (response.data.success) {
-        setEvent(response.data.data)
+      const data = await eventService.getEventById(id)
+      if (data.success) {
+        setEvent(data.data)
       }
     } catch (err) {
       console.error('Error fetching event:', err)
@@ -49,26 +50,26 @@ function EventDetail() {
       setRegisterError(null)
 
       // Step 1: Create the registration
-      const regResponse = await api.post(`/events/${id}/register`)
-      if (!regResponse.data.success) {
-        setRegisterError(regResponse.data.message || 'Failed to register')
+      const regData = await eventService.registerForEvent(id)
+      if (!regData.success) {
+        setRegisterError(regData.message || 'Failed to register')
         return
       }
 
-      const registration = regResponse.data.data
+      const registration = regData.data
       const fee = parseFloat(event.registrationFee)
 
       // Step 2: If paid event, initiate Khalti payment
       if (fee > 0) {
-        const payResponse = await api.post('/payments/khalti/initiate-event', {
+        const payData = await paymentService.initiateEventPayment({
           registrationId: registration.id,
           amount: fee,
           returnUrl: `${window.location.origin}/payment/callback?type=event`,
         })
 
-        if (payResponse.data.success && payResponse.data.data.paymentUrl) {
+        if (payData.success && payData.data.paymentUrl) {
           // Redirect user to Khalti payment page
-          window.location.href = payResponse.data.data.paymentUrl
+          window.location.href = payData.data.paymentUrl
           return
         } else {
           setRegisterError('Failed to initiate payment. Please try again.')
@@ -89,7 +90,7 @@ function EventDetail() {
     setCancelModal(false)
     try {
       setRegistering(true)
-      await api.delete(`/events/${id}/register`)
+      await eventService.cancelRegistration(id)
       fetchEvent()
     } catch (err) {
       console.error('Error cancelling:', err)
@@ -464,13 +465,13 @@ function EventDetail() {
                     onClick={async () => {
                       try {
                         setRegistering(true);
-                        const payResponse = await api.post('/payments/khalti/initiate-event', {
+                        const payData = await paymentService.initiateEventPayment({
                           registrationId: event.registrationId,
                           amount: parseFloat(event.registrationFee),
                           returnUrl: `${window.location.origin}/payment/callback?type=event`,
                         });
-                        if (payResponse.data.success && payResponse.data.data.paymentUrl) {
-                          window.location.href = payResponse.data.data.paymentUrl;
+                        if (payData.success && payData.data.paymentUrl) {
+                          window.location.href = payData.data.paymentUrl;
                         } else {
                           setRegisterError('Failed to initiate payment.');
                           setRegistering(false);

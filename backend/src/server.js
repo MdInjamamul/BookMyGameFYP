@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./config');
 const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
+const paginationLimiter = require('./middleware/paginationLimiter');
 
 const app = express();
 
@@ -37,6 +38,9 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
+
+// App-wide data scrubbers
+app.use(paginationLimiter);
 
 // API Routes
 app.use('/api/auth', require('./routes/auth.routes'));

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 
 function PendingVenues() {
     const [venues, setVenues] = useState([]);
@@ -17,9 +17,9 @@ function PendingVenues() {
         hasFetched.current = true;
         try {
             setIsLoading(true);
-            const response = await api.get('/admin/venues/pending');
-            if (response.data.success) {
-                setVenues(response.data.data);
+            const data = await adminService.getPendingVenues();
+            if (data.success) {
+                setVenues(data.data);
             }
         } catch (err) {
             console.error('Error fetching pending venues:', err);
@@ -36,8 +36,8 @@ function PendingVenues() {
     const handleApprove = async (venueId) => {
         try {
             setProcessingId(venueId);
-            const response = await api.put(`/admin/venues/${venueId}/approve`);
-            if (response.data.success) {
+            const response = await adminService.approveVenue(venueId);
+            if (response.success) {
                 setVenues(venues.filter(v => v.id !== venueId));
             }
         } catch (err) {
@@ -56,10 +56,8 @@ function PendingVenues() {
 
         try {
             setProcessingId(venueId);
-            const response = await api.put(`/admin/venues/${venueId}/reject`, {
-                reason: rejectReason,
-            });
-            if (response.data.success) {
+            const response = await adminService.rejectVenue(venueId, rejectReason);
+            if (response.success) {
                 setVenues(venues.filter(v => v.id !== venueId));
                 setShowRejectModal(null);
                 setRejectReason('');

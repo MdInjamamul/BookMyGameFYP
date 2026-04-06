@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 import { useDebounce } from '../../hooks/useDebounce';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
@@ -22,9 +22,9 @@ function AllVenues() {
             if (searchQuery) params.append('search', searchQuery);
             params.append('limit', '50');
 
-            const response = await api.get(`/admin/venues?${params.toString()}`);
-            if (response.data.success) {
-                setVenues(response.data.data);
+            const data = await adminService.getAllVenues(params.toString());
+            if (data.success) {
+                setVenues(data.data);
             }
         } catch (err) {
             console.error('Error fetching venues:', err);

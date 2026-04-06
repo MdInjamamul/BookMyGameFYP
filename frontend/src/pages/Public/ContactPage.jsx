@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../../services/api';
+import contactService from '../../services/contactService';
 import { toast } from 'react-hot-toast';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebookF, FaTwitter, FaInstagram, FaPaperPlane } from 'react-icons/fa';
 
@@ -25,12 +25,12 @@ function ContactPage() {
         setIsSubmitting(true);
         
         try {
-            const response = await api.post(`/contact`, formData);
-            if (response.data.success) {
+            const response = await contactService.submitContactForm(formData);
+            if (response.success) {
                 toast.success('Message sent successfully! We will get back to you soon.');
                 setFormData({ name: '', email: '', subject: '', message: '' });
             } else {
-                toast.error(response.data.message || 'Failed to send message.');
+                toast.error(response.message || 'Failed to send message.');
             }
         } catch (error) {
             console.error('Contact submission error:', error);

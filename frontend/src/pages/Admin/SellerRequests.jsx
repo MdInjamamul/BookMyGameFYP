@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import adminService from '../../services/adminService';
 import ConfirmModal from '../../components/common/ConfirmModal';
 
 function SellerRequests() {
@@ -16,8 +16,8 @@ function SellerRequests() {
     const fetchRequests = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/seller-requests');
-            setRequests(res.data.data);
+            const res = await adminService.getSellerRequests();
+            setRequests(res.data);
         } catch (err) {
             console.error('Failed to fetch seller requests:', err);
         } finally {
@@ -28,7 +28,7 @@ function SellerRequests() {
     const handleApprove = async (id, name) => {
         setActionLoading(id);
         try {
-            await api.put(`/admin/seller-requests/${id}/approve`);
+            await adminService.approveSellerRequest(id);
             setMessage({ type: 'success', text: `${name} has been approved as a seller!` });
             fetchRequests();
         } catch (err) {
@@ -48,7 +48,7 @@ function SellerRequests() {
         setConfirmModal({ open: false, id: null, name: '' });
         setActionLoading(id);
         try {
-            await api.put(`/admin/seller-requests/${id}/reject`);
+            await adminService.rejectSellerRequest(id);
             setMessage({ type: 'success', text: `${name}'s seller request has been rejected` });
             fetchRequests();
         } catch (err) {

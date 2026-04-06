@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notification.controller');
 const { auth } = require('../middleware/auth');
+const { validateNotificationId } = require('../validators/notification.validator');
 
 /**
  * Notification Routes — all require authentication
@@ -23,9 +24,9 @@ router.get('/unread-count', auth, notificationController.getUnreadCount);
 router.put('/mark-all-read', auth, notificationController.markAllAsRead);
 
 // Mark single notification as read
-router.put('/:id/read', auth, notificationController.markAsRead);
+router.put('/:id/read', auth, validateNotificationId, notificationController.markAsRead);
 
 // Delete single notification
-router.delete('/:id', auth, notificationController.deleteNotification);
+router.delete('/:id', auth, validateNotificationId, notificationController.deleteNotification);
 
 module.exports = router;

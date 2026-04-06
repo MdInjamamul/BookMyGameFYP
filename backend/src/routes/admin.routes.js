@@ -3,6 +3,11 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { auth } = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
+const {
+    validateIdParam,
+    validateVenueRejection,
+    validateUserUpdate
+} = require('../validators/admin.validator');
 
 /**
  * Admin Routes
@@ -30,13 +35,13 @@ router.get('/venues/pending', adminController.getPendingVenues);
 router.get('/venues', adminController.getAllVenues);
 
 // GET /api/admin/venues/:id - Get venue details for review
-router.get('/venues/:id', adminController.getVenueForReview);
+router.get('/venues/:id', validateIdParam, adminController.getVenueForReview);
 
 // PUT /api/admin/venues/:id/approve - Approve venue
-router.put('/venues/:id/approve', adminController.approveVenue);
+router.put('/venues/:id/approve', validateIdParam, adminController.approveVenue);
 
 // PUT /api/admin/venues/:id/reject - Reject venue
-router.put('/venues/:id/reject', adminController.rejectVenue);
+router.put('/venues/:id/reject', validateVenueRejection, adminController.rejectVenue);
 
 // ============================================
 // USER MANAGEMENT
@@ -46,10 +51,10 @@ router.put('/venues/:id/reject', adminController.rejectVenue);
 router.get('/users', adminController.getAllUsers);
 
 // PUT /api/admin/users/:id - Update user (role, verification status)
-router.put('/users/:id', adminController.updateUser);
+router.put('/users/:id', validateUserUpdate, adminController.updateUser);
 
 // DELETE /api/admin/users/:id - Delete user
-router.delete('/users/:id', adminController.deleteUser);
+router.delete('/users/:id', validateIdParam, adminController.deleteUser);
 
 // ============================================
 // SELLER REQUEST MANAGEMENT
@@ -59,10 +64,10 @@ router.delete('/users/:id', adminController.deleteUser);
 router.get('/seller-requests', adminController.getSellerRequests);
 
 // PUT /api/admin/seller-requests/:id/approve - Approve seller request
-router.put('/seller-requests/:id/approve', adminController.approveSellerRequest);
+router.put('/seller-requests/:id/approve', validateIdParam, adminController.approveSellerRequest);
 
 // PUT /api/admin/seller-requests/:id/reject - Reject seller request
-router.put('/seller-requests/:id/reject', adminController.rejectSellerRequest);
+router.put('/seller-requests/:id/reject', validateIdParam, adminController.rejectSellerRequest);
 
 // ============================================
 // VIDEO UPLOADER REQUEST MANAGEMENT
@@ -72,9 +77,9 @@ router.put('/seller-requests/:id/reject', adminController.rejectSellerRequest);
 router.get('/video-uploader-requests', adminController.getVideoUploaderRequests);
 
 // PUT /api/admin/video-uploader-requests/:id/approve - Approve video uploader request
-router.put('/video-uploader-requests/:id/approve', adminController.approveVideoUploaderRequest);
+router.put('/video-uploader-requests/:id/approve', validateIdParam, adminController.approveVideoUploaderRequest);
 
 // PUT /api/admin/video-uploader-requests/:id/reject - Reject video uploader request
-router.put('/video-uploader-requests/:id/reject', adminController.rejectVideoUploaderRequest);
+router.put('/video-uploader-requests/:id/reject', validateIdParam, adminController.rejectVideoUploaderRequest);
 
 module.exports = router;

@@ -91,11 +91,34 @@ const authService = {
     return localStorage.getItem('token')
   },
 
-  /**
-   * Check if user is authenticated
-   */
   isAuthenticated() {
     return !!localStorage.getItem('token')
+  },
+
+  /**
+   * Upload profile image
+   */
+  async uploadProfileImage(formData) {
+    const response = await apiClient.post('/auth/profile/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  /**
+   * Update profile
+   */
+  async updateProfile(profileData) {
+    const response = await apiClient.put('/auth/profile', profileData)
+    return response.data
+  },
+
+  /**
+   * Update password
+   */
+  async updatePassword(passwordData) {
+    const response = await apiClient.put('/auth/password', passwordData)
+    return response.data
   },
 }
 

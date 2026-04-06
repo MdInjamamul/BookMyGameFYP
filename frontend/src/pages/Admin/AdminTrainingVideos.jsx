@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import trainingService from '../../services/trainingService';
+import sportService from '../../services/sportService';
 import toast from 'react-hot-toast';
 
 const DIFFICULTY_LEVELS = ['beginner', 'intermediate', 'advanced'];
@@ -100,11 +101,11 @@ function VideoForm({ video, sports, onSave, onCancel }) {
             }
 
             if (isEdit) {
-                await api.put(`/training/admin/${video.id}`, formData, {
+                await trainingService.adminUpdateVideo(video.id, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             } else {
-                await api.post('/training/admin', formData, {
+                await trainingService.adminCreateVideo(formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             }
@@ -370,8 +371,8 @@ function UploaderRequestsTab() {
     const fetchRequests = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/admin/video-uploader-requests');
-            if (res.data.success) setRequests(res.data.data);
+            const data = await trainingService.adminGetUploaderRequests();
+            if (data.success) setRequests(data.data);
         } catch (err) {
             console.error('Failed to fetch video uploader requests:', err);
         } finally {
@@ -382,7 +383,7 @@ function UploaderRequestsTab() {
     const handleApprove = async (id, name) => {
         setProcessing(id + '-approve');
         try {
-            await api.put(`/admin/video-uploader-requests/${id}/approve`);
+            await trainingService.adminApproveUploader(id);
             toast.success(`${name} approved to upload videos`);
             setRequests(prev => prev.filter(r => r.id !== id));
         } catch (err) {
@@ -395,7 +396,7 @@ function UploaderRequestsTab() {
     const handleReject = async (id, name) => {
         setProcessing(id + '-reject');
         try {
-            await api.put(`/admin/video-uploader-requests/${id}/reject`);
+            await trainingService.adminRejectUploader(id);
             toast.success(`Request from ${name} rejected`);
             setRequests(prev => prev.filter(r => r.id !== id));
         } catch (err) {
@@ -511,8 +512,8 @@ export default function AdminTrainingVideos() {
     const fetchVideos = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/training/admin/all', { params: { limit: 100 } });
-            if (res.data.success) setVideos(res.data.data);
+            const data = await trainingService.adminGetAllVideos({ limit: 100 });
+            if (data.success) setVideos(data.data);
         } catch (err) {
             console.error('Failed to fetch videos:', err);
         } finally {
@@ -522,8 +523,8 @@ export default function AdminTrainingVideos() {
 
     const fetchSports = async () => {
         try {
-            const res = await api.get('/sports');
-            if (res.data.success) setSports(res.data.data);
+            const data = await sportService.getSports();
+            if (data.success) setSports(data.data);
         } catch (err) {
             console.error('Failed to fetch sports:', err);
         }
@@ -531,14 +532,14 @@ export default function AdminTrainingVideos() {
 
     const fetchPendingCount = async () => {
         try {
-            const res = await api.get('/admin/video-uploader-requests');
-            if (res.data.success) setPendingRequestCount(res.data.data.length);
+            const data = await trainingService.adminGetUploaderRequests();
+            if (data.success) setPendingRequestCount(data.data.length);
         } catch (_) { /* silently ignore */ }
     };
 
     const handleDelete = async (id) => {
         try {
-            await api.delete(`/training/admin/${id}`);
+            await trainingService.adminDeleteVideo(id);
             setVideos(prev => prev.filter(v => v.id !== id));
             setDeleteConfirm(null);
             toast.success('Video deleted');
