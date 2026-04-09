@@ -60,8 +60,14 @@ const cleanupPendingPayments = async () => {
                         });
                     }
 
-                    // Delete the expired booking
-                    await prisma.booking.delete({ where: { id: booking.id } });
+                    // Soft-mark the booking as slot_released (preserve the record)
+                    await prisma.booking.update({
+                        where: { id: booking.id },
+                        data: {
+                            status: 'slot_released',
+                            notes: `Slot auto-released — payment not completed within ${EXPIRY_MINUTES} minutes`,
+                        },
+                    });
 
                     // Notify the user
                     const notification = await prisma.notification.create({
@@ -72,7 +78,7 @@ const cleanupPendingPayments = async () => {
                             message: `Your held slot at ${booking.slot.venue.name} on ${new Date(booking.slot.date).toDateString()} was released because payment was not completed within ${EXPIRY_MINUTES} minutes. The slot is now available for others to book.`,
                             relatedEntityType: 'venue',
                             relatedEntityId: booking.slot.venue.id,
-                            link: '/my-bookings',
+                            link: '/my-bookings?filter=slot_released',
                         },
                     });
 

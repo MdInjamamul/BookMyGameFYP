@@ -85,6 +85,7 @@ function UserBookingDetail() {
             confirmed: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
             cancelled: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
             completed: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> },
+            slot_released: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg> },
         };
         return badges[status] || { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> };
     };
@@ -203,7 +204,11 @@ function UserBookingDetail() {
                         </div>
                         <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
                             <span className="mr-2">{statusStyle.icon}</span>
-                            {booking.status === 'pending' ? 'Pending Payment' : booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                            {booking.status === 'pending'
+                                ? 'Pending Payment'
+                                : booking.status === 'slot_released'
+                                ? '🔓 Slot Released'
+                                : booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
                         </div>
                     </div>
                 </div>
@@ -357,6 +362,20 @@ function UserBookingDetail() {
                                             </div>
                                             <div className="ml-3 mt-1">
                                                 <p className="text-sm font-medium text-red-400">Cancelled</p>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                                {booking.status === 'slot_released' && (
+                                    <>
+                                        <div className="w-0.5 h-4 bg-gray-700 ml-4 -my-2"></div>
+                                        <div className="flex items-start">
+                                            <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                                            </div>
+                                            <div className="ml-3 mt-1">
+                                                <p className="text-sm font-medium text-orange-400">Slot Released</p>
+                                                <p className="text-xs text-gray-400 mt-0.5">Payment timeout</p>
                                             </div>
                                         </div>
                                     </>

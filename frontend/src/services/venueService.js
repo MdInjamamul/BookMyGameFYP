@@ -57,10 +57,29 @@ export const getSports = async () => {
     return response.data;
 };
 
+/**
+ * Get public platform stats for landing page hero section
+ * Returns: { totalVenues, totalBookings, totalCities }
+ */
+export const getPublicStats = async () => {
+    const response = await apiClient.get('/venues/public-stats');
+    return response.data;
+};
+
+/**
+ * Get distinct city names from approved venues (for search dropdown)
+ */
+export const getCities = async () => {
+    const response = await apiClient.get('/venues/cities');
+    return response.data;
+};
+
 export default {
     getVenues,
     getVenueById,
     getFeaturedVenues,
     getSportsWithVenueCounts,
     getSports,
+    getPublicStats,
+    getCities,
 };

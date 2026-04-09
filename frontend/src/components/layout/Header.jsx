@@ -34,11 +34,11 @@ function Header() {
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-50">
-            <nav className="container-custom py-4">
+            <nav className="container-custom py-2">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center">
-                        <img src={logo} alt="BookMyGame" className="h-14 w-auto" />
+                    <Link to="/" className="flex items-center -ml-10">
+                        <img src={logo} alt="BookMyGame" className="h-14 w-auto transform scale-[3.5] origin-left" />
                     </Link>
 
                     {/* Navigation Links */}
@@ -98,7 +98,7 @@ function Header() {
                                 )}
 
                                 {/* Cart Icon */}
-                                <button 
+                                <button
                                     onClick={() => setIsCartOpen(true)}
                                     className="relative p-2 text-gray-500 hover:text-primary-600 transition-colors"
                                 >

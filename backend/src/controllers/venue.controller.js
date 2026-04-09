@@ -50,6 +50,26 @@ const getVenueById = async (req, res) => {
     }
 };
 
+const getPublicStats = async (req, res) => {
+    try {
+        const data = await venueService.getPublicStats();
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching public stats:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch platform stats' });
+    }
+};
+
+const getCities = async (req, res) => {
+    try {
+        const cities = await venueService.getCities();
+        res.json({ success: true, data: cities });
+    } catch (error) {
+        console.error('Error fetching cities:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch cities' });
+    }
+};
+
 // ============================================
 // OPERATOR ENDPOINTS
 // ============================================
@@ -234,6 +254,8 @@ module.exports = {
     // Public
     getVenues,
     getVenueById,
+    getPublicStats,
+    getCities,
     // Operator
     getOperatorVenues,
     getOperatorVenueById,

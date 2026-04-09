@@ -553,6 +553,37 @@ class VenueService {
             recentBookings,
         };
     }
+
+    // ============================================
+    // PUBLIC STATS (Landing Page)
+    // ============================================
+
+    async getPublicStats() {
+        const [totalVenues, totalBookings, cityGroups] = await Promise.all([
+            prisma.venue.count({ where: { approvalStatus: 'approved', isActive: true } }),
+            prisma.booking.count(),
+            prisma.venue.groupBy({
+                by: ['city'],
+                where: { approvalStatus: 'approved', isActive: true, city: { not: null } },
+            }),
+        ]);
+
+        const totalCities = cityGroups.filter(g => g.city && g.city.trim() !== '').length;
+
+        return { totalVenues, totalBookings, totalCities };
+    }
+
+    async getCities() {
+        const cityGroups = await prisma.venue.groupBy({
+            by: ['city'],
+            where: { approvalStatus: 'approved', isActive: true, city: { not: null } },
+            orderBy: { city: 'asc' },
+        });
+
+        return cityGroups
+            .map(g => g.city)
+            .filter(c => c && c.trim() !== '');
+    }
 }
 
 module.exports = new VenueService();

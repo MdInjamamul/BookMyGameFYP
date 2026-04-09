@@ -218,13 +218,22 @@ function Calendar({ selectedDate, onDateSelect, events }) {
   const hasEvents = (date) => {
     // Convert to local date string without UTC conversion
     const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    return events.some((event) => {
-      const eventStartDate = new Date(event.startDate)
-      const eventEndDate = new Date(event.endDate)
-      const eventStartStr = `${eventStartDate.getFullYear()}-${String(eventStartDate.getMonth() + 1).padStart(2, '0')}-${String(eventStartDate.getDate()).padStart(2, '0')}`
-      const eventEndStr = `${eventEndDate.getFullYear()}-${String(eventEndDate.getMonth() + 1).padStart(2, '0')}-${String(eventEndDate.getDate()).padStart(2, '0')}`
-      return localDateStr >= eventStartStr && localDateStr <= eventEndStr
-    })
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    // Only mark dates that have at least one active (non-ended) event
+    return events
+      .filter((e) => {
+        const end = new Date(e.endDate)
+        end.setHours(23, 59, 59, 999)
+        return end >= today
+      })
+      .some((event) => {
+        const eventStartDate = new Date(event.startDate)
+        const eventEndDate = new Date(event.endDate)
+        const eventStartStr = `${eventStartDate.getFullYear()}-${String(eventStartDate.getMonth() + 1).padStart(2, '0')}-${String(eventStartDate.getDate()).padStart(2, '0')}`
+        const eventEndStr = `${eventEndDate.getFullYear()}-${String(eventEndDate.getMonth() + 1).padStart(2, '0')}-${String(eventEndDate.getDate()).padStart(2, '0')}`
+        return localDateStr >= eventStartStr && localDateStr <= eventEndStr
+      })
   }
 
   const isSelected = (date) => {
@@ -396,6 +405,11 @@ function EventCalendar() {
 
   // Filter events
   const filteredEvents = events.filter((event) => {
+    // Safety net: hide events whose end date has fully passed
+    const endOfDay = new Date(event.endDate)
+    endOfDay.setHours(23, 59, 59, 999)
+    if (endOfDay < new Date()) return false
+
     // Category filter
     if (selectedCategory !== 'all' && event.eventType !== selectedCategory)
       return false
@@ -564,7 +578,7 @@ function EventCalendar() {
             {/* Results Info */}
             <div className='flex items-center justify-between mb-4'>
               <p className='text-gray-600'>
-                {sortedEvents.length} events found
+                {sortedEvents.length} upcoming event{sortedEvents.length !== 1 ? 's' : ''} found
                 {selectedDate && (
                   <span className='ml-2'>
                     for{' '}

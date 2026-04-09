@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import bookingService from '../../services/bookingService'
 import paymentService from '../../services/paymentService'
 import { formatTime } from '../../utils/timeUtils'
@@ -9,6 +9,14 @@ import toast from 'react-hot-toast'
 import ConfirmModal from '../../components/common/ConfirmModal'
 
 const EXPIRY_MINUTES = 5 // must match backend pendingPaymentCleaner.js
+
+const STATUS_LABELS = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  cancelled: 'Cancelled',
+  completed: 'Completed',
+  slot_released: 'Slot Released',
+}
 
 /**
  * Live countdown for a pending-payment booking.
@@ -47,10 +55,12 @@ function PendingCountdown({ createdAt, onExpired }) {
 }
 
 function MyBookings() {
+  const [searchParams] = useSearchParams()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [filter, setFilter] = useState('all')
+  // Initialise filter from URL query param so notification links auto-select the right tab
+  const [filter, setFilter] = useState(searchParams.get('filter') || 'all')
   const [cancellingId, setCancellingId] = useState(null)
   const [retryingId, setRetryingId] = useState(null)
   const [cancelModal, setCancelModal] = useState({ open: false, booking: null, refundMsg: '' })
@@ -147,6 +157,7 @@ function MyBookings() {
       confirmed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
       completed: 'bg-blue-100 text-blue-800',
+      slot_released: 'bg-orange-100 text-orange-800',
     }
     return styles[status] || 'bg-gray-100 text-gray-800'
   }
@@ -165,7 +176,7 @@ function MyBookings() {
   }
 
   const canCancelBooking = (booking) => {
-    if (hasPendingPayment(booking)) return false // hide cancel — only retry shown
+    if (hasPendingPayment(booking)) return false
     if (!['pending', 'confirmed'].includes(booking.status)) return false
     const bookingStart = getBookingStartDateTime(booking)
     if (!bookingStart) return false
@@ -183,6 +194,7 @@ function MyBookings() {
     confirmed: bookings.filter((b) => b.status === 'confirmed').length,
     completed: bookings.filter((b) => b.status === 'completed').length,
     cancelled: bookings.filter((b) => b.status === 'cancelled').length,
+    slot_released: bookings.filter((b) => b.status === 'slot_released').length,
   }
 
   return (
@@ -214,16 +226,20 @@ function MyBookings() {
             { key: 'pending', label: 'Pending' },
             { key: 'confirmed', label: 'Confirmed' },
             { key: 'completed', label: 'Completed' },
+            { key: 'slot_released', label: 'Slot Released' },
             { key: 'cancelled', label: 'Cancelled' },
           ].map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === key ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === key
+                  ? key === 'slot_released'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-primary-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+                }`}
             >
-              {label} ({statusCounts[key]})
+              {label} ({statusCounts[key] ?? 0})
             </button>
           ))}
         </div>
@@ -246,7 +262,11 @@ function MyBookings() {
             </svg>
             <h3 className='text-lg font-semibold text-gray-900 mb-2'>No bookings found</h3>
             <p className='text-gray-500 mb-6'>
-              {filter === 'all' ? "You haven't made any bookings yet." : `No ${filter} bookings.`}
+              {filter === 'all'
+                ? "You haven't made any bookings yet."
+                : filter === 'slot_released'
+                  ? "No slot-released bookings. These appear when a payment isn't completed in time."
+                  : `No ${STATUS_LABELS[filter] || filter} bookings.`}
             </p>
             <Link to='/venues' className='btn-primary'>Browse Venues</Link>
           </div>
@@ -256,13 +276,13 @@ function MyBookings() {
               const slot = booking.slot || booking.timeSlot
               const venue = booking.venue || slot?.venue
               const isPendingPayment = hasPendingPayment(booking)
+              const isSlotReleased = booking.status === 'slot_released'
 
               return (
                 <div
                   key={booking.id}
-                  className={`bg-white rounded-xl shadow-soft overflow-hidden ${
-                    isPendingPayment ? 'ring-2 ring-amber-400' : ''
-                  }`}
+                  className={`bg-white rounded-xl shadow-soft overflow-hidden ${isPendingPayment ? 'ring-2 ring-amber-400' : ''
+                    } ${isSlotReleased ? 'ring-1 ring-orange-200' : ''}`}
                 >
                   {/* ── Pending payment warning banner ── */}
                   {isPendingPayment && (
@@ -277,7 +297,7 @@ function MyBookings() {
                             <PendingCountdown createdAt={booking.createdAt} onExpired={fetchBookings} />
                           </p>
                           <p className='text-xs text-amber-700 mt-0.5'>
-                            Amount was not transferred. Complete payment before the timer expires or your slot will be automatically released.
+                            Complete payment before the timer expires or your slot will be automatically released.
                           </p>
                         </div>
                       </div>
@@ -288,6 +308,25 @@ function MyBookings() {
                       >
                         {retryingId === booking.id ? 'Redirecting...' : '💳 Complete Payment'}
                       </button>
+                    </div>
+                  )}
+
+                  {/* ── Slot released info banner ── */}
+                  {isSlotReleased && (
+                    <div className='bg-orange-50 border-b border-orange-200 px-6 py-3 flex items-center gap-3'>
+                      <span className='text-xl flex-shrink-0'>🔓</span>
+                      <div className='flex-1'>
+                        <p className='text-sm font-semibold text-orange-800'>Slot Released</p>
+                        <p className='text-xs text-orange-700 mt-0.5'>
+                          This slot was released because payment wasn't completed within {EXPIRY_MINUTES} minutes.
+                        </p>
+                      </div>
+                      <Link
+                        to='/venues'
+                        className='flex-shrink-0 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-colors whitespace-nowrap'
+                      >
+                        Book Again →
+                      </Link>
                     </div>
                   )}
 
@@ -315,7 +354,7 @@ function MyBookings() {
                             <p className='text-gray-500 text-sm'>{venue?.sport?.name}</p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(booking.status)}`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            {STATUS_LABELS[booking.status] || (booking.status.charAt(0).toUpperCase() + booking.status.slice(1))}
                           </span>
                         </div>
 

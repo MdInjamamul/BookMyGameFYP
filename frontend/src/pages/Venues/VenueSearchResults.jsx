@@ -99,6 +99,7 @@ function FilterSidebar({
   setFilters,
   onClear,
   sports,
+  cities,
   viewMode,
   userLocation,
   onLocateMe,
@@ -125,6 +126,21 @@ function FilterSidebar({
         >
           Clear All
         </button>
+      </div>
+
+      {/* City / Location */}
+      <div className='mb-6'>
+        <h4 className='font-medium text-gray-900 mb-3'>Location</h4>
+        <select
+          value={filters.city}
+          onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+          className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none'
+        >
+          <option value=''>All Cities</option>
+          {cities.map((city) => (
+            <option key={city} value={city}>{city}</option>
+          ))}
+        </select>
       </div>
 
       {/* Sport Type */}
@@ -335,12 +351,14 @@ function VenueSearchResults() {
 
   const [venues, setVenues] = useState([])
   const [sports, setSports] = useState([])
+  const [cities, setCities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 })
 
   const [filters, setFilters] = useState({
-    sport: searchParams.get('sport') || '',
+    sport:    searchParams.get('sport') || '',
+    city:     searchParams.get('city')  || '',   // ← read city from URL on mount
     maxPrice: parseInt(searchParams.get('maxPrice')) || 10000,
     amenities: [],
     minRating: 0,
@@ -353,17 +371,24 @@ function VenueSearchResults() {
   const [locating, setLocating] = useState(false)
   const [locationError, setLocationError] = useState(null)
 
-  // ── Fetch sports once
+  // ── Fetch sports + cities once
   useEffect(() => {
-    const fetchSports = async () => {
+    const fetchMeta = async () => {
       try {
-        const response = await getSports()
-        if (response.success) setSports(response.data)
+        const [sRes, cRes] = await Promise.allSettled([
+          getSports(),
+          import('../../services/venueService').then((m) => m.getCities()),
+        ])
+        if (sRes.status === 'fulfilled' && sRes.value.success) setSports(sRes.value.data)
+        if (cRes.status === 'fulfilled') {
+          const cData = cRes.value
+          setCities(Array.isArray(cData) ? cData : (cData?.data ?? []))
+        }
       } catch (err) {
-        console.error('Failed to fetch sports:', err)
+        console.error('Failed to fetch sports/cities:', err)
       }
     }
-    fetchSports()
+    fetchMeta()
   }, [])
 
   // ── Reset page on filter/search change
@@ -372,6 +397,7 @@ function VenueSearchResults() {
   }, [
     debouncedSearch,
     filters.sport,
+    filters.city,
     filters.maxPrice,
     filters.minRating,
     filters.amenities.length,
@@ -385,8 +411,9 @@ function VenueSearchResults() {
       setError(null)
       try {
         const params = {
-          search: debouncedSearch || undefined,
-          sport: filters.sport || undefined,
+          search:   debouncedSearch || undefined,
+          sport:    filters.sport   || undefined,
+          city:     filters.city    || undefined,   // ← pass city to API
           maxPrice: filters.maxPrice < 10000 ? filters.maxPrice : undefined,
           sortBy,
           page: currentPage,
@@ -425,6 +452,7 @@ function VenueSearchResults() {
     debouncedSearch,
     currentPage,
     filters.sport,
+    filters.city,
     filters.maxPrice,
     filters.minRating,
     filters.amenities.length,
@@ -435,11 +463,12 @@ function VenueSearchResults() {
   // ── Sync URL params
   useEffect(() => {
     const params = new URLSearchParams()
-    if (debouncedSearch) params.set('search', debouncedSearch)
-    if (filters.sport) params.set('sport', filters.sport)
+    if (debouncedSearch)    params.set('search', debouncedSearch)
+    if (filters.sport)      params.set('sport',  filters.sport)
+    if (filters.city)       params.set('city',   filters.city)  // ← keep city in URL
     if (sortBy !== 'relevance') params.set('sortBy', sortBy)
     setSearchParams(params, { replace: true })
-  }, [debouncedSearch, filters.sport, sortBy, setSearchParams])
+  }, [debouncedSearch, filters.sport, filters.city, sortBy, setSearchParams])
 
   // ── Keep userLocation.rangeKm in sync with filters.rangeKm
   useEffect(() => {
@@ -497,7 +526,7 @@ function VenueSearchResults() {
   })()
 
   const clearFilters = () => {
-    setFilters({ sport: '', maxPrice: 10000, amenities: [], minRating: 0, rangeKm: 0 })
+    setFilters({ sport: '', city: '', maxPrice: 10000, amenities: [], minRating: 0, rangeKm: 0 })
     setUserLocation({ lat: null, lng: null, rangeKm: null })
     setSearchQuery('')
   }
@@ -532,13 +561,13 @@ function VenueSearchResults() {
               </div>
             </div>
 
-            {/* View toggle */}
-            <div className='hidden md:flex items-center bg-gray-100 rounded-lg p-1'>
+            {/* View toggle — visible on all screen sizes */}
+            <div className='flex items-center bg-gray-100 rounded-lg p-1'>
               <button
                 id='view-list-btn'
                 onClick={() => setViewMode('list')}
                 title='List View'
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'list'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -552,7 +581,7 @@ function VenueSearchResults() {
                 id='view-map-btn'
                 onClick={() => setViewMode('map')}
                 title='Map View'
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'map'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -579,7 +608,7 @@ function VenueSearchResults() {
 
       <main className='container-custom py-6'>
         {/* Title + sort row */}
-        <div className='flex items-center justify-between mb-6'>
+        <div className='flex items-center justify-between mb-4'>
           <div>
             <h1 className='font-heading font-bold text-2xl text-gray-900'>Sports Venues</h1>
             <p className='text-gray-600'>
@@ -587,7 +616,7 @@ function VenueSearchResults() {
                 ? 'Loading…'
                 : viewMode === 'map' && userLocation.lat && filters.rangeKm > 0
                 ? `${displayedVenues.length} venues within ${filters.rangeKm} km`
-                : `${venues.length} venues found`}
+                : `${venues.length} venue${venues.length !== 1 ? 's' : ''} found`}
             </p>
           </div>
 
@@ -603,6 +632,48 @@ function VenueSearchResults() {
             <option value='price_desc'>Price: High to Low</option>
           </select>
         </div>
+
+        {/* Active filter chips */}
+        {(filters.city || filters.sport || debouncedSearch) && (
+          <div className='flex flex-wrap gap-2 mb-4'>
+            {filters.city && (
+              <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-100 text-primary-800 rounded-full text-sm font-medium'>
+                📍 {filters.city}
+                <button
+                  onClick={() => setFilters((f) => ({ ...f, city: '' }))}
+                  className='ml-0.5 hover:text-red-600 transition-colors font-bold'
+                  aria-label='Remove city filter'
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.sport && (
+              <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-100 text-primary-800 rounded-full text-sm font-medium'>
+                🏅 {filters.sport}
+                <button
+                  onClick={() => setFilters((f) => ({ ...f, sport: '' }))}
+                  className='ml-0.5 hover:text-red-600 transition-colors font-bold'
+                  aria-label='Remove sport filter'
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {debouncedSearch && (
+              <span className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-medium'>
+                🔍 "{debouncedSearch}"
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className='ml-0.5 hover:text-red-600 transition-colors font-bold'
+                  aria-label='Clear search'
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Location error banner */}
         {locationError && (
@@ -623,6 +694,7 @@ function VenueSearchResults() {
               setFilters={setFilters}
               onClear={clearFilters}
               sports={sports}
+              cities={cities}
               viewMode={viewMode}
               userLocation={userLocation}
               onLocateMe={handleLocateMe}
@@ -652,6 +724,7 @@ function VenueSearchResults() {
                     setFilters={setFilters}
                     onClear={clearFilters}
                     sports={sports}
+                    cities={cities}
                     viewMode={viewMode}
                     userLocation={userLocation}
                     onLocateMe={handleLocateMe}

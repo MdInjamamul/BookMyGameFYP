@@ -35,6 +35,14 @@ const getAllEvents = async (req, res) => {
 
     const where = {}
 
+    // By default only show events that have not fully ended yet.
+    // Pass ?showPast=true to also include ended events.
+    const showPast = req.query.showPast === 'true'
+    if (!showPast) {
+      // Include events whose endDate is today or in the future
+      where.endDate = { gte: new Date() }
+    }
+
     // Filter by event type
     if (eventType && eventType !== 'all') {
       where.eventType = eventType

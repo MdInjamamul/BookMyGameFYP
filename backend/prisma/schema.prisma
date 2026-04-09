@@ -41,6 +41,7 @@ enum BookingStatus {
   confirmed
   cancelled
   completed
+  slot_released // payment not completed within 5 minutes — slot was auto-released
 }
 
 enum PaymentStatus {

@@ -1,6 +1,79 @@
+import { useState, useEffect, useRef } from 'react';
 import SearchBar from './SearchBar';
+import { getPublicStats } from '../../../services/venueService';
 
+// ─── Count-up hook ─────────────────────────────────────────────────────────────
+function useCountUp(target, duration = 1800) {
+    const [value, setValue] = useState(0);
+    const raf = useRef(null);
+
+    useEffect(() => {
+        if (target === null || target === undefined) return;
+        const start = performance.now();
+        const tick = (now) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(Math.round(eased * target));
+            if (progress < 1) {
+                raf.current = requestAnimationFrame(tick);
+            }
+        };
+        raf.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf.current);
+    }, [target, duration]);
+
+    return value;
+}
+
+// ─── Individual stat counter ────────────────────────────────────────────────────
+function StatCounter({ value, suffix = '', label, loading }) {
+    const count = useCountUp(loading ? 0 : (value ?? 0));
+
+    return (
+        <div className="text-center">
+            <div className="font-heading font-bold text-3xl md:text-4xl mb-1 tabular-nums">
+                {loading ? (
+                    <span className="inline-block w-16 h-9 rounded bg-white/20 animate-pulse" />
+                ) : (
+                    <>
+                        {count.toLocaleString()}
+                        <span>{suffix}</span>
+                    </>
+                )}
+            </div>
+            <div className="text-primary-200 text-sm md:text-base">{label}</div>
+        </div>
+    );
+}
+
+// ─── HeroSection ───────────────────────────────────────────────────────────────
 function HeroSection() {
+    const [stats, setStats] = useState({ totalVenues: null, totalBookings: null, totalCities: null });
+    const [loadingStats, setLoadingStats] = useState(true);
+
+    useEffect(() => {
+        let mounted = true;
+        getPublicStats()
+            .then((res) => {
+                if (!mounted) return;
+                const d = res?.data ?? res;
+                setStats({
+                    totalVenues:   d?.totalVenues   ?? 0,
+                    totalBookings: d?.totalBookings  ?? 0,
+                    totalCities:   d?.totalCities    ?? 0,
+                });
+            })
+            .catch(() => {
+                // Keep zeros if API fails — non-blocking
+            })
+            .finally(() => {
+                if (mounted) setLoadingStats(false);
+            });
+        return () => { mounted = false; };
+    }, []);
+
     return (
         <section className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 text-white overflow-hidden">
             {/* Background Pattern */}
@@ -14,7 +87,7 @@ function HeroSection() {
                 <div className="max-w-4xl mx-auto text-center">
                     {/* Heading */}
                     <h1 className="font-heading font-bold text-4xl md:text-6xl lg:text-7xl mb-6 animate-fade-in">
-                        Find & Book Your
+                        Find &amp; Book Your
                         <span className="block mt-2">Perfect Sports Venue</span>
                     </h1>
 
@@ -27,20 +100,26 @@ function HeroSection() {
                     {/* Search Bar */}
                     <SearchBar />
 
-                    {/* Stats */}
+                    {/* Live Stats */}
                     <div className="grid grid-cols-3 gap-6 mt-16 max-w-2xl mx-auto">
-                        <div className="text-center">
-                            <div className="font-heading font-bold text-3xl md:text-4xl mb-1">500+</div>
-                            <div className="text-primary-200 text-sm md:text-base">Venues</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="font-heading font-bold text-3xl md:text-4xl mb-1">10K+</div>
-                            <div className="text-primary-200 text-sm md:text-base">Bookings</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="font-heading font-bold text-3xl md:text-4xl mb-1">50+</div>
-                            <div className="text-primary-200 text-sm md:text-base">Cities</div>
-                        </div>
+                        <StatCounter
+                            value={stats.totalVenues}
+                            suffix="+"
+                            label="Venues"
+                            loading={loadingStats}
+                        />
+                        <StatCounter
+                            value={stats.totalBookings}
+                            suffix="+"
+                            label="Bookings"
+                            loading={loadingStats}
+                        />
+                        <StatCounter
+                            value={stats.totalCities}
+                            suffix="+"
+                            label="Cities"
+                            loading={loadingStats}
+                        />
                     </div>
 
                     {/* Scroll Indicator */}

@@ -53,6 +53,12 @@ router.put('/operator/my-venues/:id/hours', auth, isOperator, venueController.up
 // PUBLIC ROUTES - Must come AFTER operator routes
 // ============================================
 
+// GET /api/venues/public-stats - Get platform stats for landing page (no auth)
+router.get('/public-stats', venueController.getPublicStats);
+
+// GET /api/venues/cities - Get distinct city list for search dropdown (no auth)
+router.get('/cities', venueController.getCities);
+
 // GET /api/venues - Get all approved venues with filters
 router.get('/', venueController.getVenues);
 
