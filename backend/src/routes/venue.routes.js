@@ -22,6 +22,9 @@ const { createVenueRules, updateVenueRules } = require('../validators/venue.vali
 // GET /api/venues/operator/dashboard - Get operator dashboard stats
 router.get('/operator/dashboard', auth, isOperator, venueController.getOperatorDashboard);
 
+// GET /api/venues/operator/analytics - Get operator analytics
+router.get('/operator/analytics', auth, isOperator, venueController.getOperatorAnalytics);
+
 // GET /api/venues/operator/my-venues - Get operator's own venues
 router.get('/operator/my-venues', auth, isOperator, venueController.getOperatorVenues);
 

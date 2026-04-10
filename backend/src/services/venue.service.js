@@ -554,6 +554,151 @@ class VenueService {
         };
     }
 
+    async getOperatorAnalytics(operatorId, period = 30) {
+        const startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        startDate.setDate(startDate.getDate() - parseInt(period) + 1);
+
+        const venues = await prisma.venue.findMany({
+            where: { operatorId },
+            select: { id: true, name: true }
+        });
+        const venueIds = venues.map(v => v.id);
+        const venueNameMap = {};
+        venues.forEach(v => venueNameMap[v.id] = v.name);
+
+        const upcomingEndDate = new Date();
+        upcomingEndDate.setHours(0, 0, 0, 0);
+        upcomingEndDate.setDate(upcomingEndDate.getDate() + 7);
+
+        const upcomingStartDate = new Date();
+        upcomingStartDate.setHours(0, 0, 0, 0);
+
+        const [bookingsRaw, statusGroup, topVenuesRaw, upcomingBookingsRaw] = await Promise.all([
+            // Bookings in current period for operator's venues
+            prisma.booking.findMany({
+                where: {
+                    slot: { venueId: { in: venueIds } },
+                    createdAt: { gte: startDate }
+                },
+                select: { createdAt: true, status: true, totalPrice: true }
+            }),
+            // Status aggregation
+            prisma.booking.groupBy({
+                by: ['status'],
+                where: { slot: { venueId: { in: venueIds } } },
+                _count: true
+            }),
+            // All confirmed bookings to aggregate top venues
+            prisma.booking.findMany({
+                where: {
+                    slot: { venueId: { in: venueIds } },
+                    status: 'confirmed'
+                },
+                select: { totalPrice: true, slot: { select: { venueId: true } } }
+            }),
+            // Upcoming bookings
+            prisma.booking.findMany({
+                where: {
+                    slot: {
+                        venueId: { in: venueIds },
+                        date: {
+                            gte: upcomingStartDate,
+                            lte: upcomingEndDate
+                        }
+                    },
+                    status: { in: ['confirmed', 'completed'] }
+                },
+                include: {
+                    user: { select: { fullName: true } },
+                    slot: { select: { date: true, startTime: true, endTime: true, venue: { select: { name: true } } } }
+                },
+                orderBy: [
+                    { slot: { date: 'asc' } },
+                    { slot: { startTime: 'asc' } }
+                ],
+                take: 5
+            })
+        ]);
+
+        const upcomingCount = await prisma.booking.count({
+            where: {
+                 slot: {
+                     venueId: { in: venueIds },
+                     date: {
+                         gte: upcomingStartDate,
+                         lte: upcomingEndDate
+                     }
+                 },
+                 status: { in: ['confirmed', 'completed'] }
+            }
+        });
+
+        // Initialize date map
+        const dateMap = {};
+        for(let i = 0; i < parseInt(period); i++) {
+            const d = new Date(startDate);
+            d.setDate(startDate.getDate() + i);
+            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            dateMap[dateStr] = { revenue: 0, count: 0 };
+        }
+
+        bookingsRaw.forEach(b => {
+             const dStr = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+             if(dateMap[dStr]) {
+                 dateMap[dStr].count += 1;
+                 if(b.status === 'confirmed') {
+                     dateMap[dStr].revenue += parseFloat(b.totalPrice) || 0;
+                 }
+             }
+        });
+
+        const revenueByDay = Object.keys(dateMap).map(date => ({ date, revenue: dateMap[date].revenue }));
+        const bookingsByDay = Object.keys(dateMap).map(date => ({ date, count: dateMap[date].count }));
+
+        const bookingsByStatus = statusGroup.map(sg => ({
+            status: sg.status,
+            count: sg._count
+        }));
+
+        const topVenuesMap = {};
+        venueIds.forEach(id => {
+            topVenuesMap[id] = { venueId: id, venueName: venueNameMap[id], revenue: 0, bookingCount: 0 };
+        });
+
+        topVenuesRaw.forEach(b => {
+            const vId = b.slot?.venueId;
+            if(vId && topVenuesMap[vId]) {
+                topVenuesMap[vId].revenue += parseFloat(b.totalPrice) || 0;
+                topVenuesMap[vId].bookingCount += 1;
+            }
+        });
+
+        const topVenues = Object.values(topVenuesMap)
+            .sort((a,b) => b.revenue - a.revenue)
+            .slice(0, 5);
+
+        const upcomingBookings = upcomingBookingsRaw.map(b => ({
+            id: b.id,
+            slotDate: b.slot?.date,
+            startTime: b.slot?.startTime,
+            endTime: b.slot?.endTime,
+            venueName: b.slot?.venue?.name,
+            userName: b.user?.fullName,
+            totalPrice: b.totalPrice,
+            status: b.status
+        }));
+
+        return {
+            revenueByDay,
+            bookingsByDay,
+            bookingsByStatus,
+            topVenues,
+            upcomingBookings,
+            upcomingCount
+        };
+    }
+
     // ============================================
     // PUBLIC STATS (Landing Page)
     // ============================================

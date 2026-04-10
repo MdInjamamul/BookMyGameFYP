@@ -54,6 +54,170 @@ class AdminService {
         };
     }
 
+    async getAnalytics(period = 30) {
+        const startDate = new Date();
+        startDate.setHours(0, 0, 0, 0); // start of today
+        startDate.setDate(startDate.getDate() - parseInt(period) + 1); // e.g. for last 7 days including today
+
+        const previousStartDate = new Date(startDate);
+        previousStartDate.setDate(previousStartDate.getDate() - parseInt(period));
+
+        // Fetch data for both periods and other stats
+        const [
+            currentBookings,
+            previousBookings,
+            currentUsers,
+            previousUsers,
+            statusGroup,
+            venuesBySportRaw,
+            topOperatorsRaw,
+            sports
+        ] = await Promise.all([
+            prisma.booking.findMany({
+                where: { createdAt: { gte: startDate } },
+                select: { createdAt: true, status: true, totalPrice: true }
+            }),
+            prisma.booking.findMany({
+                where: { createdAt: { gte: previousStartDate, lt: startDate } },
+                select: { status: true, totalPrice: true }
+            }),
+            prisma.user.findMany({
+                where: { createdAt: { gte: startDate }, role: 'user' },
+                select: { createdAt: true }
+            }),
+            prisma.user.count({
+                where: { createdAt: { gte: previousStartDate, lt: startDate }, role: 'user' }
+            }),
+            prisma.booking.groupBy({
+                by: ['status'],
+                _count: true
+            }),
+            prisma.venue.groupBy({
+                by: ['sportId'],
+                where: { approvalStatus: 'approved' },
+                _count: true
+            }),
+            prisma.booking.findMany({
+                where: { status: 'confirmed' },
+                select: {
+                    totalPrice: true,
+                    slot: {
+                        select: {
+                            venue: {
+                                select: {
+                                    operator: { select: { id: true, fullName: true, email: true } }
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+            prisma.sport.findMany()
+        ]);
+
+        // Process daily data with zero-fill
+        const dateMap = {};
+        for(let i = 0; i < parseInt(period); i++) {
+            const d = new Date(startDate);
+            d.setDate(startDate.getDate() + i);
+            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            dateMap[dateStr] = { revenue: 0, users: 0 };
+        }
+
+        let currentRevenue = 0;
+        let currentConfirmedBookings = 0;
+        
+        currentBookings.forEach(b => {
+             const dStr = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+             if(dateMap[dStr] && b.status === 'confirmed') {
+                 const price = parseFloat(b.totalPrice) || 0;
+                 dateMap[dStr].revenue += price;
+                 currentRevenue += price;
+                 currentConfirmedBookings += 1;
+             }
+        });
+
+        currentUsers.forEach(u => {
+             const dStr = new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+             if(dateMap[dStr]) {
+                 dateMap[dStr].users += 1;
+             }
+        });
+
+        const revenueByDay = Object.keys(dateMap).map(date => ({ date, revenue: dateMap[date].revenue }));
+        const usersByDay = Object.keys(dateMap).map(date => ({ date, count: dateMap[date].users }));
+
+        // Process previous period for KPIs
+        let previousRevenue = 0;
+        let previousConfirmedBookings = 0;
+        previousBookings.forEach(b => {
+             if(b.status === 'confirmed') {
+                 previousRevenue += parseFloat(b.totalPrice) || 0;
+                 previousConfirmedBookings += 1;
+             }
+        });
+
+        // Booking status distribution
+        const bookingsByStatus = statusGroup.map(sg => ({
+            status: sg.status,
+            count: sg._count
+        }));
+
+        // Venues by sport
+        const sportMap = {};
+        sports.forEach(s => sportMap[s.id] = s.name);
+        
+        const venuesBySport = venuesBySportRaw.map(vs => ({
+            sport: sportMap[vs.sportId] || 'Unknown',
+            count: vs._count
+        })).sort((a, b) => b.count - a.count);
+
+        // Top Operators
+        const opsMap = {};
+        topOperatorsRaw.forEach(b => {
+            const op = b.slot?.venue?.operator;
+            if(op) {
+                if(!opsMap[op.id]) {
+                    opsMap[op.id] = { ...op, totalRevenue: 0, bookingCount: 0, venueCount: 0 };
+                }
+                opsMap[op.id].totalRevenue += parseFloat(b.totalPrice) || 0;
+                opsMap[op.id].bookingCount += 1;
+            }
+        });
+        
+        // Count venues per operator for top operators table
+        const operatorIds = Object.keys(opsMap);
+        if(operatorIds.length > 0) {
+             const venuesPerOp = await prisma.venue.groupBy({
+                 by: ['operatorId'],
+                 where: { operatorId: { in: operatorIds }, approvalStatus: 'approved' },
+                 _count: true
+             });
+             venuesPerOp.forEach(vo => {
+                 if(opsMap[vo.operatorId]) {
+                     opsMap[vo.operatorId].venueCount = vo._count;
+                 }
+             });
+        }
+
+        const topOperators = Object.values(opsMap)
+            .sort((a, b) => b.totalRevenue - a.totalRevenue)
+            .slice(0, 5);
+
+        return {
+            revenueByDay,
+            usersByDay,
+            bookingsByStatus,
+            venuesBySport,
+            topOperators,
+            kpiComparison: {
+                currentRevenue, previousRevenue,
+                currentBookings: currentConfirmedBookings, previousBookings: previousConfirmedBookings,
+                currentUsers: currentUsers.length, previousUsers
+            }
+        };
+    }
+
     // ============================================
     // VENUE MANAGEMENT
     // ============================================

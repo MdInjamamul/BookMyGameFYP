@@ -22,6 +22,20 @@ const getAdminDashboard = async (req, res) => {
     }
 };
 
+const getAdminAnalytics = async (req, res) => {
+    try {
+        const period = parseInt(req.query.period) || 30;
+        const data = await adminService.getAnalytics(period);
+        res.json({
+            success: true,
+            data,
+        });
+    } catch (error) {
+        console.error('Error fetching admin analytics:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch analytics data' });
+    }
+};
+
 // ============================================
 // VENUE MANAGEMENT
 // ============================================
@@ -263,6 +277,7 @@ const rejectVideoUploaderRequest = async (req, res) => {
 
 module.exports = {
     getAdminDashboard,
+    getAdminAnalytics,
     getPendingVenues,
     getAllVenues,
     getVenueForReview,

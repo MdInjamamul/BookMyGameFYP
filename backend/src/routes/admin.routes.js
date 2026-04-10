@@ -24,6 +24,9 @@ router.use(auth, isAdmin);
 // GET /api/admin/dashboard - Get dashboard statistics
 router.get('/dashboard', adminController.getAdminDashboard);
 
+// GET /api/admin/analytics - Get analytics data
+router.get('/analytics', adminController.getAdminAnalytics);
+
 // ============================================
 // VENUE MANAGEMENT
 // ============================================

@@ -13,6 +13,11 @@ const adminService = {
         return response.data;
     },
     
+    getAnalytics: async (period = 30) => {
+        const response = await api.get(`/admin/analytics?period=${period}`);
+        return response.data;
+    },
+    
     getAllVenues: async (params) => {
         const response = await api.get(`/admin/venues?${params}`);
         return response.data;

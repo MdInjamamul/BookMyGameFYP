@@ -250,6 +250,23 @@ const getOperatorDashboard = async (req, res) => {
     }
 };
 
+const getOperatorAnalytics = async (req, res) => {
+    try {
+        const period = parseInt(req.query.period) || 30;
+        const data = await venueService.getOperatorAnalytics(req.user.id, period);
+        res.json({
+            success: true,
+            data,
+        });
+    } catch (error) {
+        console.error('Error fetching operator analytics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch analytics data',
+        });
+    }
+};
+
 module.exports = {
     // Public
     getVenues,
@@ -267,4 +284,5 @@ module.exports = {
     deleteVenueImage,
     updateOperatingHours,
     getOperatorDashboard,
+    getOperatorAnalytics,
 };
