@@ -97,18 +97,40 @@ function Footer() {
                                 </li>
                             </ul>
                         </div>
+                    ) : (isAuthenticated && (user?.role === 'operator' || user?.role === 'admin')) ? (
+                        /* For Logged-in Operators / Admins */
+                        <div>
+                            <h3 className="font-heading font-semibold mb-4">Operator Panel</h3>
+                            <ul className="space-y-2">
+                                <li>
+                                    <Link to="/operator" className="text-gray-400 hover:text-white transition-colors">
+                                        My Dashboard
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/operator/venues/new" className="text-gray-400 hover:text-white transition-colors">
+                                        Add New Venue
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/operator/bookings" className="text-gray-400 hover:text-white transition-colors">
+                                        View Bookings
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
                     ) : (
-                        /* For Venue Owners — shown to guests, operators, admins */
+                        /* For Venue Owners — shown to guests */
                         <div>
                             <h3 className="font-heading font-semibold mb-4">For Venue Owners</h3>
                             <ul className="space-y-2">
                                 <li>
-                                    <Link to="/list-venue" className="text-gray-400 hover:text-white transition-colors">
+                                    <Link to="/login" className="text-gray-400 hover:text-white transition-colors">
                                         List Your Venue
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/owner-dashboard" className="text-gray-400 hover:text-white transition-colors">
+                                    <Link to="/login" className="text-gray-400 hover:text-white transition-colors">
                                         Owner Dashboard
                                     </Link>
                                 </li>

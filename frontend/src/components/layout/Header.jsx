@@ -55,7 +55,7 @@ function Header() {
                         <Link to="/training" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
                             Training Videos
                         </Link>
-                        {isAuthenticated && user?.role === 'user' && (
+                        {isAuthenticated && (user?.role === 'user' || user?.role === 'operator') && (
                             <>
                                 <Link to="/my-bookings" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
                                     My Bookings
@@ -190,8 +190,8 @@ function Header() {
                                                     <span>Account Settings</span>
                                                 </Link>
 
-                                                {/* My Bookings and Orders - for regular users */}
-                                                {user?.role === 'user' && (
+                                                {/* My Bookings and Orders - for regular users & operators */}
+                                                {(user?.role === 'user' || user?.role === 'operator') && (
                                                     <>
                                                         <Link
                                                             to="/my-bookings"
