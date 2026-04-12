@@ -302,6 +302,7 @@ model Booking {
   totalPrice  Decimal       @map("total_price") @db.Decimal(10, 2)
   status      BookingStatus @default(pending)
   notes       String?
+  isWalkIn    Boolean       @default(false) @map("is_walk_in")
   bookingDate DateTime      @default(now()) @map("booking_date")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")

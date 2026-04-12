@@ -562,6 +562,7 @@ class BookingService {
                 bookingDate: parsedDate,
                 totalPrice: price || slot.price || venue.pricePerHour,
                 status: 'confirmed',
+                isWalkIn: true,
                 notes: `Walk-in booking by operator for: ${guestName || 'Walk-in Guest'}`,
             },
             include: {

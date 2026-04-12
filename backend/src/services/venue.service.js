@@ -505,7 +505,7 @@ class VenueService {
                 where: { slot: { venueId: { in: venueIds } }, status: 'confirmed' },
             }),
             prisma.booking.aggregate({
-                where: { slot: { venueId: { in: venueIds } }, status: 'confirmed' },
+                where: { slot: { venueId: { in: venueIds } }, status: 'confirmed', isWalkIn: false },
                 _sum: { totalPrice: true },
             }),
             prisma.booking.findMany({
@@ -581,7 +581,7 @@ class VenueService {
                     slot: { venueId: { in: venueIds } },
                     createdAt: { gte: startDate }
                 },
-                select: { createdAt: true, status: true, totalPrice: true }
+                select: { createdAt: true, status: true, totalPrice: true, isWalkIn: true }
             }),
             // Status aggregation
             prisma.booking.groupBy({
@@ -589,11 +589,12 @@ class VenueService {
                 where: { slot: { venueId: { in: venueIds } } },
                 _count: true
             }),
-            // All confirmed bookings to aggregate top venues
+            // All confirmed non-walk-in bookings to aggregate top venues (revenue only)
             prisma.booking.findMany({
                 where: {
                     slot: { venueId: { in: venueIds } },
-                    status: 'confirmed'
+                    status: 'confirmed',
+                    isWalkIn: false
                 },
                 select: { totalPrice: true, slot: { select: { venueId: true } } }
             }),
@@ -647,7 +648,8 @@ class VenueService {
              const dStr = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
              if(dateMap[dStr]) {
                  dateMap[dStr].count += 1;
-                 if(b.status === 'confirmed') {
+                 // Only count non-walk-in bookings as platform revenue
+                 if(b.status === 'confirmed' && !b.isWalkIn) {
                      dateMap[dStr].revenue += parseFloat(b.totalPrice) || 0;
                  }
              }

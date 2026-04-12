@@ -25,7 +25,7 @@ class AdminService {
             prisma.venue.count({ where: { approvalStatus: 'rejected' } }),
             prisma.booking.count(),
             prisma.booking.aggregate({
-                where: { status: 'confirmed' },
+                where: { status: 'confirmed', isWalkIn: false },
                 _sum: { totalPrice: true },
             }),
             prisma.venue.findMany({
@@ -75,11 +75,11 @@ class AdminService {
         ] = await Promise.all([
             prisma.booking.findMany({
                 where: { createdAt: { gte: startDate } },
-                select: { createdAt: true, status: true, totalPrice: true }
+                select: { createdAt: true, status: true, totalPrice: true, isWalkIn: true }
             }),
             prisma.booking.findMany({
                 where: { createdAt: { gte: previousStartDate, lt: startDate } },
-                select: { status: true, totalPrice: true }
+                select: { status: true, totalPrice: true, isWalkIn: true }
             }),
             prisma.user.findMany({
                 where: { createdAt: { gte: startDate }, role: 'user' },
@@ -98,7 +98,7 @@ class AdminService {
                 _count: true
             }),
             prisma.booking.findMany({
-                where: { status: 'confirmed' },
+                where: { status: 'confirmed', isWalkIn: false },
                 select: {
                     totalPrice: true,
                     slot: {
@@ -130,10 +130,13 @@ class AdminService {
         currentBookings.forEach(b => {
              const dStr = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
              if(dateMap[dStr] && b.status === 'confirmed') {
-                 const price = parseFloat(b.totalPrice) || 0;
-                 dateMap[dStr].revenue += price;
-                 currentRevenue += price;
                  currentConfirmedBookings += 1;
+                 // Only count non-walk-in bookings as platform revenue
+                 if (!b.isWalkIn) {
+                     const price = parseFloat(b.totalPrice) || 0;
+                     dateMap[dStr].revenue += price;
+                     currentRevenue += price;
+                 }
              }
         });
 
@@ -152,8 +155,11 @@ class AdminService {
         let previousConfirmedBookings = 0;
         previousBookings.forEach(b => {
              if(b.status === 'confirmed') {
-                 previousRevenue += parseFloat(b.totalPrice) || 0;
                  previousConfirmedBookings += 1;
+                 // Only count non-walk-in bookings as platform revenue
+                 if (!b.isWalkIn) {
+                     previousRevenue += parseFloat(b.totalPrice) || 0;
+                 }
              }
         });
 
